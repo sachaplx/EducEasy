@@ -1,17 +1,25 @@
 <template>
-  <v-container class="py-8" style="max-width: 520px">
-    <v-card>
-      <v-card-title>Connexion</v-card-title>
+  <v-container
+    class="d-flex align-center justify-center login-view"
+    style="
+      min-height: calc(100vh - 64px);
+      max-width: 100%;
+      padding-bottom: 64px;
+    "
+  >
+    <v-card style="max-width: 560px; width: 100%">
+      <v-card-title class="py-2">Connexion</v-card-title>
       <v-card-text>
-        <v-form @submit.prevent="submit">
+        <v-form ref="form" @submit.prevent="submit">
           <v-text-field
             v-model="username"
             label="Email ou nom d'utilisateur"
             :rules="[rules.required]"
             variant="outlined"
             :disabled="loading"
-            class="mb-4"
-            hide-details="auto"
+            density="default"
+            class="mb-7 no-grow-details"
+            hide-details="false"
           />
           <v-text-field
             v-model="password"
@@ -22,8 +30,9 @@
             :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
             @click:append-inner="showPassword = !showPassword"
             :disabled="loading"
-            class="mb-4"
-            hide-details="auto"
+            density="default"
+            class="mb-7 no-grow-details"
+            hide-details="false"
           />
           <v-btn
             type="submit"
@@ -31,19 +40,61 @@
             :loading="loading"
             :disabled="loading"
             block
+            height="48"
           >
             {{ loading ? "Connexion..." : "Se connecter" }}
           </v-btn>
         </v-form>
-        <div class="d-flex ga-3 mt-4 align-right justify-end">
-          <v-btn variant="tonal" color="primary" @click="onRegister()"
-            >Créer un compte</v-btn
-          >
-        </div>
       </v-card-text>
     </v-card>
+    <!-- Fixed bottom register footer -->
+    <v-footer
+      app
+      elevation="0"
+      color="primary"
+      class="pa-4 d-flex justify-center"
+      style="position: fixed; left: 0; right: 0; bottom: 0; height: 64px"
+    >
+      <div style="max-width: 520px; width: 100%">
+        <v-btn
+          color="white"
+          variant="flat"
+          @click="onRegister()"
+          block
+          height="44"
+        >
+          Créer un compte
+        </v-btn>
+      </div>
+    </v-footer>
   </v-container>
 </template>
+
+<style scoped>
+/* Disable scrolling on desktop for this view and keep content within viewport */
+@media (min-width: 960px) {
+  .login-view {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+/* Keep v-text-field height stable when details (errors/hints) appear */
+.no-grow-details :deep(.v-input__details) {
+  min-height: 22px; /* reserve one-line details space to avoid layout shift */
+}
+</style>
+
+<!-- Global styles to force no-scroll on desktop specifically for the login view -->
+<style>
+@media (min-width: 960px) {
+  /* Disable page scroll on desktop while on the login view */
+  html,
+  body {
+    overflow: hidden;
+  }
+}
+</style>
 
 <script setup>
 import { ref } from "vue";
@@ -58,6 +109,7 @@ const username = ref("");
 const password = ref("");
 const loading = ref(false);
 const showPassword = ref(false);
+const form = ref();
 
 const rules = {
   required: (v) => !!v || "Ce champ est requis",
@@ -70,6 +122,11 @@ function onRegister() {
 async function submit() {
   loading.value = true;
   try {
+    // Validate form first to show required error messages
+    const valid = await form.value?.validate();
+    if (!valid) {
+      return;
+    }
     await auth.login({
       username: username.value,
       password: password.value,

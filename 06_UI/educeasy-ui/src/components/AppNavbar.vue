@@ -4,10 +4,10 @@
       <div class="nav-left">
         <RouterLink to="/" class="nav-link">Accueil</RouterLink>
         <RouterLink v-if="!auth.isAuthenticated" to="/login" class="nav-link"
-          >Login</RouterLink
+          >Se connecter</RouterLink
         >
         <RouterLink v-if="!auth.isAuthenticated" to="/register" class="nav-link"
-          >Register</RouterLink
+          >Créer un compte</RouterLink
         >
       </div>
 
