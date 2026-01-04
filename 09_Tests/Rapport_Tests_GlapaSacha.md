@@ -1,7 +1,5 @@
 # Educ’Easy — Rapport de tests (synthèse)
 
-**Date :** 19/09/2025 — **Auteur :** Nom Prénom
-
 ## 1) Liste des tests effectués (format simple)
 
 - **Login avec username** → OK (identifier=username + password).
@@ -29,7 +27,6 @@
 
 ## 3) Captures (optionnel)
 
-Si tu en refais, place-les ici :  
 `captures/01_login.png`, `02_dashboard_principal.png`, `03_classes.png`, `04_pupil_profile.png`, `05_add_note.png`.
 
 ## 4) Cas non testés (et pourquoi)
