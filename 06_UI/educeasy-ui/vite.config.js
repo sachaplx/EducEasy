@@ -18,7 +18,8 @@ export default defineConfig({
       '/classrooms':{ target: 'http://localhost:4700', changeOrigin: true },
       '/pupils': { target: 'http://localhost:4700', changeOrigin: true },
       '/ping':   { target: 'http://localhost:4700', changeOrigin: true },
-      '/whoami': { target: 'http://localhost:4700', changeOrigin: true }
+      '/whoami': { target: 'http://localhost:4700', changeOrigin: true },
+      '/attendance': { target: 'http://localhost:4700', changeOrigin: true }
     }
   }
 })

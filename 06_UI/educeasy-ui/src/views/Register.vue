@@ -1,4 +1,3 @@
-<!-- src/views/Register.vue -->
 <template>
   <v-container class="py-8" max-width="700">
     <v-card>

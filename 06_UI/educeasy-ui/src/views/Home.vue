@@ -1,16 +1,7 @@
 <template>
-  <v-container class="py-6">
-    <v-row>
-      <v-col cols="12">
-        <h2 class="text-h5">Bonjour, {{ displayName }}</h2>
-        <div class="text-medium-emphasis">Voici votre tableau de bord.</div>
-      </v-col>
-    </v-row>
-
-    <PrincipalDashboard v-if="auth.isPrincipal" />
-    <TeacherDashboard v-else-if="auth.isTeacher" />
-    <v-alert v-else type="info" variant="tonal">Aucun rôle détecté.</v-alert>
-  </v-container>
+  <PrincipalDashboard v-if="auth.isPrincipal" />
+  <TeacherDashboard v-else-if="auth.isTeacher" />
+  <v-alert v-else type="info" variant="tonal">Aucun rôle détecté.</v-alert>
 </template>
 
 <script setup>

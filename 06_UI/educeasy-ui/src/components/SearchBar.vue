@@ -1,49 +1,64 @@
 <template>
-  <div class="search-anchor">
-    <v-text-field
-      v-model="q"
-      class="nav-search"
-      variant="outlined"
-      density="comfortable"
-      hide-details
-      :loading="loading"
-      placeholder="Rechercher un élève…"
-      append-inner-icon="mdi-magnify"
-      @update:modelValue="onDebounced()"
-      @keydown.enter.prevent="runSearch"
-      @focus="menu = true"
-    />
-    <v-menu
-      v-model="menu"
-      activator=".nav-search"
-      :close-on-content-click="false"
-      offset="8"
-    >
-      <v-card max-width="520">
-        <v-list v-if="suggestions.length">
-          <v-list-item
-            v-for="s in suggestions"
-            :key="s.id"
-            @click="select(s)"
-            :title="`${s.prenom} ${s.nom}`"
-          />
-        </v-list>
-        <v-card-text v-else class="text-medium-emphasis"
-          >Aucun résultat</v-card-text
-        >
-      </v-card>
-    </v-menu>
-  </div>
+  <v-menu
+    v-model="menu"
+    :close-on-content-click="false"
+    offset="8"
+    max-width="520"
+  >
+    <template #activator="{ props: menuProps }">
+      <v-text-field
+        v-bind="menuProps"
+        v-model="q"
+        class="ee-search"
+        :class="inputClass"
+        :variant="variant"
+        :density="density"
+        :loading="loading"
+        :placeholder="placeholder"
+        hide-details
+        single-line
+        prepend-inner-icon="mdi-magnify"
+        @update:modelValue="onDebounced"
+        @keydown.enter.prevent="runSearch"
+        @focus="menu = true"
+      />
+    </template>
+
+    <v-card rounded="lg">
+      <v-list v-if="suggestions.length" density="comfortable">
+        <v-list-item
+          v-for="s in suggestions"
+          :key="s.id"
+          @click="select(s)"
+          :title="`${s.prenom} ${s.nom}`"
+        />
+      </v-list>
+
+      <v-card-text v-else class="text-medium-emphasis">
+        Aucun résultat
+      </v-card-text>
+    </v-card>
+  </v-menu>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import { api } from "../services/api";
 
+const props = defineProps({
+  placeholder: { type: String, default: "Rechercher un élève, une classe..." },
+  variant: { type: String, default: "outlined" }, // ou "solo-filled"
+  density: { type: String, default: "comfortable" },
+  inputClass: { type: String, default: "" },
+});
+
+const emit = defineEmits(["select"]);
+
 const q = ref("");
 const suggestions = ref([]);
 const loading = ref(false);
 const menu = ref(false);
+
 let timer;
 
 function onDebounced() {
@@ -58,12 +73,13 @@ async function runSearch() {
     suggestions.value = [];
     return;
   }
+
   loading.value = true;
   try {
     const { data } = await api.get("/pupils/search", {
       params: { query: term },
     });
-    suggestions.value = data;
+    suggestions.value = Array.isArray(data) ? data : [];
   } catch {
     suggestions.value = [];
   } finally {
@@ -71,7 +87,6 @@ async function runSearch() {
   }
 }
 
-const emit = defineEmits(["select"]);
 function select(item) {
   q.value = `${item.prenom} ${item.nom}`;
   menu.value = false;
@@ -80,17 +95,31 @@ function select(item) {
 </script>
 
 <style scoped>
-.search-anchor {
-  position: relative;
+/* Style proche du React: input translucide sur gradient */
+.ee-search :deep(.v-field) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  transition: background 180ms ease, border-color 180ms ease;
 }
-.nav-search {
-  min-width: 360px;
-  max-width: 42vw;
+
+.ee-search :deep(.v-field:hover) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
 }
-@media (max-width: 680px) {
-  .nav-search {
-    min-width: 220px;
-    max-width: 60vw;
-  }
+
+.ee-search :deep(.v-field--focused) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* placeholder + icône */
+.ee-search :deep(input::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ee-search :deep(.v-field__prepend-inner .v-icon),
+.ee-search :deep(.v-field__append-inner .v-icon) {
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

@@ -1,220 +1,397 @@
 <template>
-  <v-container class="py-6">
-    <v-row dense justify="center">
-      <v-col cols="12" md="8">
-        <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div class="text-h6">Classes par école</div>
-            <template #loader>
-              <div class="d-flex flex-column py-1" style="width: 180px">
-                <v-skeleton-loader type="list-item-two-line" class="mb-1" />
-                <v-skeleton-loader type="list-item-two-line" class="mb-1" />
-                <v-skeleton-loader type="list-item-two-line" />
-              </div>
-            </template>
-            <v-tooltip text="Actualiser les écoles" location="top">
-              <template #activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  icon
-                  variant="text"
-                  density="comfortable"
-                  :disabled="loading.schools"
-                  @click="loadEcoles"
-                  aria-label="Actualiser"
-                  :loading="loading.schools"
-                >
-                  <v-icon>mdi-refresh</v-icon>
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </v-card-title>
-          <v-card-text>
-            <div v-if="!ecoles.length" class="text-medium-emphasis">
-              Charge les écoles pour commencer.
-            </div>
+  <v-container fluid class="dashboard">
+    <!-- Header -->
+    <div class="dashboard__inner" style="gap: 12px">
+      <div>
+        <div class="text-h4 font-weight-bold">Bonjour, {{ displayName }}</div>
+        <div class="text-body-2 text-medium-emphasis">
+          Voici un aperçu de votre réseau scolaire aujourd’hui
+        </div>
+      </div>
 
-            <template v-else>
-              <v-select
-                v-model="selectedEcoleId"
-                :items="ecoles"
-                item-title="nom"
-                item-value="id"
-                label="École"
-                variant="outlined"
-                @update:modelValue="loadClasses"
-                hide-details="auto"
-                class="mb-4"
-              />
-              <div class="d-flex justify-end mt-n3 mb-1" v-if="selectedEcoleId">
-                <v-tooltip text="Actualiser les classes" location="top">
+      <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
+        {{ error }}
+      </v-alert>
+
+      <v-row dense>
+        <!-- Left: Classes by school -->
+        <v-col cols="12" md="8">
+          <v-card rounded="xl" class="pa-4">
+            <div
+              class="d-flex flex-wrap align-center justify-space-between"
+              style="gap: 12px"
+            >
+              <div>
+                <div class="text-h6 font-weight-bold">Classes par école</div>
+                <div class="text-body-2 text-medium-emphasis">
+                  Gérez vos classes et suivez la progression
+                </div>
+              </div>
+
+              <div
+                class="d-flex align-center"
+                style="gap: 8px; min-width: 320px"
+              >
+                <v-select
+                  v-model="selectedEcoleId"
+                  :items="ecoles"
+                  item-title="nom"
+                  item-value="id"
+                  label="École"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  :loading="loading.schools"
+                  @update:modelValue="loadClasses"
+                />
+                <v-tooltip text="Actualiser" location="top">
                   <template #activator="{ props }">
                     <v-btn
                       v-bind="props"
-                      size="small"
                       icon
                       variant="text"
-                      :disabled="loading.classes"
+                      :loading="loading.classes"
+                      :disabled="!selectedEcoleId"
                       @click="loadClasses"
-                      aria-label="Actualiser classes"
+                      aria-label="Actualiser"
                     >
-                      <v-icon :class="{ 'mdi-spin': loading.classes }">
-                        mdi-refresh
-                      </v-icon>
+                      <v-icon>mdi-refresh</v-icon>
                     </v-btn>
                   </template>
                 </v-tooltip>
               </div>
-              <v-alert v-if="error" type="error" variant="tonal" class="mt-2">{{
-                error
-              }}</v-alert>
+            </div>
 
-              <v-expansion-panels
-                v-if="classes.length"
-                v-model="opened"
-                multiple
-                variant="accordion"
-                class="mt-3"
-                @update:modelValue="onExpanded"
-              >
-                <v-expansion-panel
-                  v-for="c in classes"
-                  :key="c.id"
-                  :value="c.id"
-                  class="mb-2"
+            <div class="mt-4">
+              <template v-if="!selectedEcoleId && !loading.schools">
+                <div class="text-medium-emphasis py-6">
+                  Sélectionnez une école pour afficher ses classes.
+                </div>
+              </template>
+
+              <template v-else-if="loading.classes">
+                <v-row dense>
+                  <v-col v-for="i in 4" :key="i" cols="12" sm="6">
+                    <v-skeleton-loader type="card" />
+                  </v-col>
+                </v-row>
+              </template>
+
+              <template v-else-if="selectedEcoleId && !classes.length">
+                <div class="text-medium-emphasis py-6">
+                  Aucune classe pour cette école.
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="class-grid">
+                  <ClassCards
+                    v-for="c in classes"
+                    :key="c.id"
+                    :name="classLabel(c)"
+                    :level="cycleLabel(c)"
+                    :teacher-name="teacherLabel(c)"
+                    :teacher-initials="
+                      initials(c.teacherFirstName, c.teacherLastName)
+                    "
+                    :student-count="pupilsCount(c)"
+                    :course-count="coursesCount(c)"
+                    :color="pickColor(c)"
+                    @click="openClass(c)"
+                  />
+                </div>
+
+                <v-btn
+                  class="mt-4 dashed-btn"
+                  variant="text"
+                  block
+                  prepend-icon="mdi-chevron-down"
+                  @click="goToAllClasses"
                 >
-                  <v-expansion-panel-title>
-                    <div
-                      class="d-flex align-center justify-space-between w-100"
-                    >
-                      <div class="d-flex align-center" style="gap: 10px">
-                        <v-icon>mdi-google-classroom</v-icon>
-                        <span class="text-subtitle-1">
-                          {{ c.name || c.nom || "Classe #" + c.id }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center" style="gap: 8px">
-                        <v-chip
-                          v-if="c.teacherLastName || c.teacherFirstName"
-                          size="small"
-                          color="primary"
-                          variant="tonal"
-                        >
-                          {{ c.teacherLastName.toUpperCase() }}
-                          {{ c.teacherFirstName }}
-                        </v-chip>
-                        <v-chip
-                          v-if="state(c.id).loaded"
-                          size="small"
-                          variant="tonal"
-                        >
-                          {{ state(c.id).items.length }} élèves
-                        </v-chip>
-                      </div>
-                    </div>
-                  </v-expansion-panel-title>
+                  Voir toutes les classes
+                </v-btn>
+              </template>
+            </div>
+          </v-card>
 
-                  <v-expansion-panel-text>
-                    <div
-                      v-if="state(c.id).loading"
-                      class="py-4 d-flex justify-center"
-                    >
-                      <v-progress-circular indeterminate />
-                    </div>
+          <!-- Actions rapides -->
+          <div class="mt-6">
+            <div class="text-h6 font-weight-bold mb-3">Actions rapides</div>
+            <v-row dense>
+              <v-col cols="12" sm="6" md="3">
+                <QuickAction
+                  title="Ajouter un élève"
+                  icon="mdi-account-plus"
+                  color="primary"
+                  @click="actionAddPupil"
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <QuickAction
+                  title="Nouvelle classe"
+                  icon="mdi-google-classroom"
+                  color="deep-orange"
+                  @click="actionAddClass"
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <QuickAction
+                  title="Créer un rapport"
+                  icon="mdi-file-document-outline"
+                  color="grey-darken-2"
+                  @click="actionCreateReport"
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <QuickAction
+                  title="Planifier"
+                  icon="mdi-calendar"
+                  color="grey-darken-2"
+                  @click="actionSchedule"
+                />
+              </v-col>
+            </v-row>
+          </div>
+        </v-col>
 
-                    <v-alert
-                      v-else-if="state(c.id).error"
-                      type="error"
-                      variant="tonal"
-                      class="my-2"
-                    >
-                      {{ state(c.id).error }}
-                    </v-alert>
-
-                    <div v-else>
-                      <v-text-field
-                        v-model="filters[c.id]"
-                        label="Filtrer les élèves"
-                        variant="outlined"
-                        density="compact"
-                        hide-details="auto"
-                        class="mb-2"
-                        prepend-inner-icon="mdi-magnify"
-                      />
-                      <v-list lines="two">
-                        <v-list-item
-                          v-for="p in filteredPupils(c.id)"
-                          :key="p.id"
-                          :title="`${p.prenom} ${p.nom}`"
-                          @click="goToPupil(p)"
-                          class="rounded"
-                          density="comfortable"
-                        >
-                          <template #prepend>
-                            <v-avatar :color="avatarColor(p.gender)" size="32">
-                              <span class="avatar-initials">{{
-                                initials(p.prenom, p.nom)
-                              }}</span>
-                            </v-avatar>
-                          </template>
-                          <template #append>
-                            <v-btn
-                              size="small"
-                              variant="text"
-                              icon="mdi-open-in-new"
-                              @click.stop="goToPupil(p)"
-                            />
-                          </template>
-                        </v-list-item>
-
-                        <div
-                          v-if="!state(c.id).items.length"
-                          class="text-medium-emphasis text-center py-6"
-                        >
-                          Aucun élève dans cette classe.
-                        </div>
-                      </v-list>
-                    </div>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-
-              <div
-                v-else-if="!loading.classes"
-                class="text-medium-emphasis mt-3"
+        <!-- Right: Recent activity -->
+        <v-col cols="12" md="4"
+          ><PresenceCard
+            class="mb-4"
+            :value="presenceRateDisplay"
+            subtitle="Cette semaine"
+            :loading="pupil.presence.loading"
+            :error="pupil.presence.error"
+            @refresh="pupil.fetchPresenceRate()"
+          />
+          <v-card rounded="xl" class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <div class="text-h6 font-weight-bold">Activité récente</div>
+              <v-btn
+                variant="text"
+                size="small"
+                color="primary"
+                @click="goToActivity"
               >
-                Aucune classe pour cette école.
+                Tout voir
+              </v-btn>
+            </div>
+
+            <v-list lines="two" density="comfortable">
+              <v-list-item
+                v-for="(a, idx) in recentActivity"
+                :key="idx"
+                class="rounded-lg mb-1"
+              >
+                <template #prepend>
+                  <v-avatar :color="a.color" variant="tonal" size="34">
+                    <v-icon>{{ a.icon }}</v-icon>
+                  </v-avatar>
+                </template>
+
+                <v-list-item-title class="font-weight-medium">
+                  {{ a.title }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-medium-emphasis">
+                  {{ a.subtitle }}
+                </v-list-item-subtitle>
+
+                <template #append>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ a.when }}
+                  </div>
+                </template>
+              </v-list-item>
+            </v-list>
+
+            <v-card
+              rounded="xl"
+              class="mt-4 pa-4"
+              color="primary"
+              variant="flat"
+            >
+              <div class="text-subtitle-2 font-weight-bold text-white mb-1">
+                Conseil du jour
               </div>
-            </template>
+              <div class="text-body-2 text-white" style="opacity: 0.95">
+                Pensez à valider les absences de la semaine avant vendredi.
+              </div>
+            </v-card>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Dialog: pupils in class -->
+      <v-dialog v-model="pupilsDialog" max-width="720">
+        <v-card rounded="xl">
+          <v-card-title class="d-flex align-center justify-space-between">
+            <div class="d-flex flex-column">
+              <span class="text-h6 font-weight-bold">{{
+                classLabel(activeClass)
+              }}</span>
+              <span class="text-body-2 text-medium-emphasis">
+                {{ teacherLabel(activeClass) }}
+              </span>
+            </div>
+
+            <div class="d-flex align-center" style="gap: 6px">
+              <v-btn
+                icon
+                variant="text"
+                :loading="activeState.loading"
+                @click="reloadPupils(activeClass?.id)"
+                aria-label="Actualiser élèves"
+              >
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                @click="pupilsDialog = false"
+                aria-label="Fermer"
+              >
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+          </v-card-title>
+
+          <v-card-text>
+            <v-text-field
+              v-model="pupilQuery"
+              label="Rechercher un élève"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              prepend-inner-icon="mdi-magnify"
+              class="mb-3"
+            />
+
+            <div v-if="activeState.loading" class="py-8 d-flex justify-center">
+              <v-progress-circular indeterminate />
+            </div>
+
+            <v-alert
+              v-else-if="activeState.error"
+              type="error"
+              variant="tonal"
+              class="mb-3"
+            >
+              {{ activeState.error }}
+            </v-alert>
+
+            <div
+              v-else-if="!activeState.items.length"
+              class="text-medium-emphasis py-8 text-center"
+            >
+              Aucun élève dans cette classe.
+            </div>
+
+            <v-list v-else lines="two" density="comfortable">
+              <v-list-item
+                v-for="p in pupilsFiltered"
+                :key="p.id"
+                class="rounded mb-1"
+                @click="goToPupil(p)"
+              >
+                <template #prepend>
+                  <v-avatar :color="avatarColor(p.gender)" size="32">
+                    <span class="avatar-initials">{{
+                      initials(p.prenom, p.nom)
+                    }}</span>
+                  </v-avatar>
+                </template>
+
+                <v-list-item-title class="font-weight-medium">
+                  {{ p.prenom }} {{ p.nom }}
+                </v-list-item-title>
+
+                <v-list-item-subtitle class="text-medium-emphasis">
+                  {{ classLabel(activeClass) }}
+                </v-list-item-subtitle>
+
+                <template #append>
+                  <v-btn
+                    icon
+                    size="small"
+                    variant="text"
+                    @click.stop="goToPupil(p)"
+                    aria-label="Ouvrir profil"
+                  >
+                    <v-icon>mdi-open-in-new</v-icon>
+                  </v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
+      </v-dialog>
+    </div>
   </v-container>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { computed, onMounted, reactive, ref, defineComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { usePupilStore } from "../stores/pupil";
 import { api } from "../services/api";
+import KpiCard from "../components/dashboard/KpiCards.vue";
+import QuickAction from "../components/dashboard/QuickActions.vue";
+import ClassCards from "../components/dashboard/ClassCards.vue";
+import PresenceCard from "../components/dashboard/PresenceCard.vue";
 
+/* -----------------------------
+  State
+------------------------------ */
 const router = useRouter();
 const auth = useAuthStore();
+const pupil = usePupilStore();
+
+const error = ref("");
 
 const ecoles = ref([]);
 const classes = ref([]);
 const selectedEcoleId = ref(null);
+const me = ref(null);
+
+const presence = ref({
+  loading: false,
+  error: null,
+  rate: 0,
+  from: null,
+  to: null,
+});
+
 const loading = ref({ schools: false, classes: false });
-const error = ref("");
 
-const opened = ref([]);
-const byClass = reactive({});
-const filters = reactive({});
+const byClass = reactive({}); // cache pupils by classId
 
-onMounted(loadEcoles);
+// Dialog pupils
+const pupilsDialog = ref(false);
+const activeClassId = ref(null);
+const pupilQuery = ref("");
+
+/* -----------------------------
+  Computed
+------------------------------ */
+const displayName = computed(
+  () => me.value?.firstName || me.value?.lastName || ""
+);
+
+const presenceRateDisplay = computed(() => {
+  const r = pupil.presence.rate;
+  return typeof r === "number" ? Math.round(r) : null;
+});
+
+const activeClass = computed(
+  () =>
+    classes.value.find((c) => String(c.id) === String(activeClassId.value)) ||
+    null
+);
 
 function state(classId) {
+  if (!classId)
+    return { loading: false, loaded: false, error: null, items: [] };
   if (!byClass[classId])
     byClass[classId] = {
       loading: false,
@@ -222,9 +399,62 @@ function state(classId) {
       error: null,
       items: [],
     };
-  if (filters[classId] === undefined) filters[classId] = "";
   return byClass[classId];
 }
+
+const activeState = computed(() => state(activeClassId.value));
+
+const pupilsFiltered = computed(() => {
+  const s = activeState.value;
+  const q = (pupilQuery.value || "").trim().toLowerCase();
+  if (!q) return s.items;
+  return s.items.filter((p) => {
+    const nom = (p.nom || "").toLowerCase();
+    const prenom = (p.prenom || "").toLowerCase();
+    return nom.includes(q) || prenom.includes(q);
+  });
+});
+
+const kpis = computed(() => {
+  // NOTE: présence & deltas = placeholders (à brancher)
+  const totalClasses = classes.value.length || 0;
+
+  // total enseignants: unique sur teacher name/id si dispo
+  const teachers = new Set(
+    classes.value
+      .map((c) =>
+        `${c.teacherFirstName || ""}|${c.teacherLastName || ""}`.trim()
+      )
+      .filter((x) => x !== "|")
+  );
+
+  // total élèves: si une classe a un count natif, on le prend, sinon on prend cache chargé, sinon 0
+  const totalPupils = classes.value.reduce((sum, c) => sum + pupilsCount(c), 0);
+
+  return {
+    totalPupils: totalPupils || 0,
+    totalClasses,
+    totalTeachers: teachers.size || 0,
+    presenceRate: presence.value.rate,
+  };
+});
+
+/* -----------------------------
+  Fetch
+------------------------------ */
+onMounted(async () => {
+  await loadEcoles();
+  await pupil.fetchPresenceRate();
+  try {
+    loading.value = true;
+    const { data } = await api.get("/whoami");
+    me.value = data;
+  } catch (e) {
+    error.value = "Impossible de charger votre profil.";
+  } finally {
+    loading.value = false;
+  }
+});
 
 async function loadEcoles() {
   if (loading.value.schools) return;
@@ -235,6 +465,12 @@ async function loadEcoles() {
       params: { _ts: Date.now() },
     });
     ecoles.value = Array.isArray(data) ? data : [];
+
+    // auto-select first school if none selected
+    if (!selectedEcoleId.value && ecoles.value.length) {
+      selectedEcoleId.value = ecoles.value[0].id;
+      await loadClasses();
+    }
   } catch (e) {
     error.value = "Impossible de charger vos écoles.";
   } finally {
@@ -244,6 +480,7 @@ async function loadEcoles() {
 
 async function loadClasses() {
   if (!selectedEcoleId.value) return;
+  if (loading.value.classes) return;
   loading.value.classes = true;
   error.value = "";
   try {
@@ -254,10 +491,6 @@ async function loadClasses() {
       }
     );
     classes.value = Array.isArray(data) ? data : [];
-
-    opened.value = [];
-    for (const k of Object.keys(byClass)) delete byClass[k];
-    for (const k of Object.keys(filters)) delete filters[k];
   } catch (e) {
     error.value = "Impossible de charger les classes.";
   } finally {
@@ -271,7 +504,9 @@ async function loadPupils(classId) {
   s.loading = true;
   s.error = null;
   try {
-    const { data } = await api.get(`/classrooms/${classId}/list/pupils`);
+    const { data } = await api.get(`/classrooms/${classId}/list/pupils`, {
+      params: { _ts: Date.now() },
+    });
     s.items = Array.isArray(data)
       ? data
       : Array.isArray(data?.pupils)
@@ -285,15 +520,102 @@ async function loadPupils(classId) {
   }
 }
 
-function onExpanded(newVals) {
-  const ids = Array.isArray(newVals) ? newVals : [newVals];
-  ids.forEach((id) => loadPupils(id));
+async function reloadPupils(classId) {
+  if (!classId) return;
+  const s = state(classId);
+  if (s.loading) return;
+  s.loading = true;
+  s.error = null;
+  try {
+    const { data } = await api.get(`/classrooms/${classId}/list/pupils`, {
+      params: { _ts: Date.now() },
+    });
+    s.items = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.pupils)
+      ? data.pupils
+      : [];
+    s.loaded = true;
+  } catch (e) {
+    s.error = "Actualisation des élèves impossible.";
+  } finally {
+    s.loading = false;
+  }
+}
+
+/* -----------------------------
+  UI actions
+------------------------------ */
+function openClass(c) {
+  activeClassId.value = c.id;
+  pupilsDialog.value = true;
+  pupilQuery.value = "";
+  loadPupils(c.id);
+}
+
+function pickColor(c) {
+  const palette = ["blue", "purple", "orange", "green", "pink"];
+  return palette[Math.abs(Number(c?.id || 0)) % palette.length];
+}
+
+function goToPupil(p) {
+  router.push({ name: "pupil-profile", params: { id: p.id } });
+}
+
+function goToAllClasses() {
+  // TODO: route si tu as une page liste de classes
+  // router.push({ name: "classrooms" })
+  // En attendant, on ne fait rien.
+}
+
+function goToActivity() {
+  // TODO: route activité
+}
+
+/* Actions rapides (routes à adapter) */
+function actionAddPupil() {
+  // router.push({ name: "pupil-create" })
+}
+function actionAddClass() {
+  // router.push({ name: "classroom-create" })
+}
+function actionCreateReport() {
+  // router.push({ name: "reports" })
+}
+function actionSchedule() {
+  // router.push({ name: "calendar" })
+}
+
+/* -----------------------------
+  Helpers (labels/colors)
+------------------------------ */
+function classLabel(c) {
+  if (!c) return "";
+  return c.name || c.nom || `Classe #${c.id}`;
+}
+
+function teacherLabel(c) {
+  if (!c) return "Enseignant non renseigné";
+  const ln = (c.teacherLastName || "").trim();
+  const fn = (c.teacherFirstName || "").trim();
+  const full = `${ln ? ln.toUpperCase() : ""} ${fn}`.trim();
+  return full || "Enseignant non renseigné";
+}
+
+function cycleLabel(c) {
+  // Si tu as déjà cycle/level dans l'objet classe, branche ici.
+  // Sinon on déduit grossièrement du nom.
+  const n = (classLabel(c) || "").toUpperCase();
+  if (n.includes("CP") || n.includes("CE1") || n.includes("CE2"))
+    return "Cycle 2";
+  if (n.includes("CM1") || n.includes("CM2")) return "Cycle 3";
+  return "Cycle";
 }
 
 function initials(firstName, lastName) {
   const f = (firstName || "").trim().charAt(0).toUpperCase();
   const l = (lastName || "").trim().charAt(0).toUpperCase();
-  return f + l || "??";
+  return f + l || "—";
 }
 
 function avatarColor(gender) {
@@ -302,24 +624,116 @@ function avatarColor(gender) {
   return "grey";
 }
 
-function filteredPupils(classId) {
-  const s = state(classId);
-  const q = (filters[classId] || "").trim().toLowerCase();
-  if (!q) return s.items;
-  return s.items.filter(
-    (p) =>
-      (p.nom || "").toLowerCase().includes(q) ||
-      (p.prenom || "").toLowerCase().includes(q)
-  );
+function accentVuetifyColor(c) {
+  // Palette proche de la maquette
+  const palette = ["primary", "deep-purple", "deep-orange", "green"];
+  const idx = Math.abs(Number(c?.id || 0)) % palette.length;
+  return palette[idx];
 }
 
-function subtitlePupil(p) {
-  if (p.classeNom && p.ecoleNom) return `${p.classeNom} — ${p.ecoleNom}`;
-  if (p.classeNom) return p.classeNom;
-  return "Élève";
+function accentColor(c) {
+  // Couleur CSS pour la bordure gauche (dépend du thème Vuetify)
+  const map = {
+    primary: "rgb(var(--v-theme-primary))",
+    "deep-purple": "rgb(var(--v-theme-deepPurple))",
+    "deep-orange": "rgb(var(--v-theme-deepOrange))",
+    green: "rgb(var(--v-theme-green))",
+  };
+  // fallback si tes tokens de thème ne sont pas tous définis :
+  const vu = accentVuetifyColor(c);
+  return map[vu] || "rgb(var(--v-theme-primary))";
 }
 
-function goToPupil(p) {
-  router.push({ name: "pupil-profile", params: { id: p.id } });
+function pupilsCount(c) {
+  // Si backend fournit déjà un count, utilise-le :
+  const direct = c?.pupilsCount ?? c?.pupilCount ?? c?.nbEleves;
+  if (typeof direct === "number") return direct;
+
+  // Sinon si on a déjà chargé les élèves :
+  const s = byClass[c?.id];
+  if (s?.loaded) return s.items.length;
+
+  // Sinon placeholder :
+  return 0;
 }
+
+function coursesCount(c) {
+  // TODO endpoint cours/ressources
+  return c?.coursesCount ?? c?.nbCours ?? 12; // 12 pour coller à la maquette (placeholder)
+}
+
+/* -----------------------------
+  Activity (placeholder)
+------------------------------ */
+const recentActivity = ref([
+  {
+    icon: "mdi-check-circle",
+    color: "green",
+    title: "Rapport hebdomadaire généré",
+    subtitle: "CE2 • École du Parc",
+    when: "Il y a 2h",
+  },
+  {
+    icon: "mdi-account-plus",
+    color: "primary",
+    title: "Nouvel élève inscrit",
+    subtitle: "Marie Dupont • CP",
+    when: "Il y a 4h",
+  },
+  {
+    icon: "mdi-alert-circle",
+    color: "deep-orange",
+    title: "Absence signalée",
+    subtitle: "3 élèves • CM1",
+    when: "Aujourd’hui",
+  },
+  {
+    icon: "mdi-clock-outline",
+    color: "grey-darken-2",
+    title: "Réunion planifiée",
+    subtitle: "Conseil des enseignants",
+    when: "Demain 14h",
+  },
+]);
 </script>
+
+<style scoped>
+.class-card {
+  border-left: 4px solid;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.class-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+}
+
+.avatar-initials {
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.quick-action {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.quick-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+}
+
+/* bouton "voir toutes les classes" en style pointillé */
+.dashed-btn {
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 14px;
+}
+
+.dashboard {
+  padding: 32px 24px;
+}
+
+.dashboard__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+</style>

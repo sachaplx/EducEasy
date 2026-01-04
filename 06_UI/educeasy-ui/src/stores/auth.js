@@ -16,6 +16,15 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(creds) {
     const payload = { identifier: creds.identifier ?? creds.username, password: creds.password }
     const { data } = await api.post('/auth/login', payload)
+    applyAuthResponse(data)
+  }
+
+  async function confirmFromEmail(tokenToConfirm) {
+    const { data } = await api.get('/auth/confirm', { params: { token: tokenToConfirm }, })
+    applyAuthResponse(data)
+  }
+
+  function applyAuthResponse(data) {
     token.value = data.token
     username.value = data.username || null
 
@@ -44,5 +53,20 @@ export const useAuthStore = defineStore('auth', () => {
     clearAuthHeader()
   }
 
-  return { token, username, roles, isAuthenticated, isPrincipal, isTeacher, login, logout }
+  async function forgotPassword(identifier) {
+    const { data } = await api.post('/auth/forgot-password', { identifier })
+    return data
+  }
+
+  async function resetPassword(tokenReset, newPassword) {
+    const { data } = await api.post('/auth/reset-password', { token: tokenReset, newPassword })
+    return data
+  }
+
+  async function validateResetToken(tokenReset) {
+    const { data } = await api.post('/auth/reset-password/validate', { token: tokenReset })
+    return data
+  }
+
+  return { token, username, roles, isAuthenticated, isPrincipal, isTeacher, login, confirmFromEmail, logout, forgotPassword, resetPassword, validateResetToken }
 })

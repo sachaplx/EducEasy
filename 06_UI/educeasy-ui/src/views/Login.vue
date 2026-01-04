@@ -34,6 +34,17 @@
             class="mb-7 no-grow-details"
             hide-details="false"
           />
+          <div class="d-flex justify-end mb-4">
+            <v-btn
+              variant="text"
+              size="small"
+              class="text-caption px-0"
+              :disabled="loading"
+              @click="onForgotPassword"
+            >
+              Mot de passe oublié ?
+            </v-btn>
+          </div>
           <v-btn
             type="submit"
             color="primary"
@@ -44,61 +55,34 @@
           >
             {{ loading ? "Connexion..." : "Se connecter" }}
           </v-btn>
+          <v-alert
+            v-if="errorMessage"
+            type="error"
+            variant="tonal"
+            class="mt-4"
+            density="compact"
+          >
+            {{ errorMessage }}
+          </v-alert>
+          <v-alert
+            v-if="infoMessage"
+            type="info"
+            variant="tonal"
+            class="mt-4"
+            density="compact"
+          >
+            {{ infoMessage }}
+          </v-alert>
         </v-form>
       </v-card-text>
     </v-card>
-    <!-- Fixed bottom register footer -->
-    <v-footer
-      app
-      elevation="0"
-      color="primary"
-      class="pa-4 d-flex justify-center"
-      style="position: fixed; left: 0; right: 0; bottom: 0; height: 64px"
-    >
-      <div style="max-width: 520px; width: 100%">
-        <v-btn
-          color="white"
-          variant="flat"
-          @click="onRegister()"
-          block
-          height="44"
-        >
-          Créer un compte
-        </v-btn>
-      </div>
-    </v-footer>
   </v-container>
 </template>
 
-<style scoped>
-/* Disable scrolling on desktop for this view and keep content within viewport */
-@media (min-width: 960px) {
-  .login-view {
-    height: 100vh;
-    overflow: hidden;
-  }
-}
-
-/* Keep v-text-field height stable when details (errors/hints) appear */
-.no-grow-details :deep(.v-input__details) {
-  min-height: 22px; /* reserve one-line details space to avoid layout shift */
-}
-</style>
-
-<!-- Global styles to force no-scroll on desktop specifically for the login view -->
-<style>
-@media (min-width: 960px) {
-  /* Disable page scroll on desktop while on the login view */
-  html,
-  body {
-    overflow: hidden;
-  }
-}
-</style>
-
 <script setup>
-import { ref } from "vue";
-import { useRouter, useRoute, RouterLink } from "vue-router";
+import axios from "axios";
+import { onMounted, ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 
 const auth = useAuthStore();
@@ -110,10 +94,19 @@ const password = ref("");
 const loading = ref(false);
 const showPassword = ref(false);
 const form = ref();
+const errorMessage = ref("");
+const infoMessage = ref("");
 
 const rules = {
   required: (v) => !!v || "Ce champ est requis",
 };
+
+onMounted(() => {
+  if (route.query.reset === "ok") {
+    infoMessage.value =
+      "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.";
+  }
+});
 
 function onRegister() {
   router.push("register");
@@ -122,7 +115,6 @@ function onRegister() {
 async function submit() {
   loading.value = true;
   try {
-    // Validate form first to show required error messages
     const valid = await form.value?.validate();
     if (!valid) {
       return;
@@ -134,10 +126,47 @@ async function submit() {
     router.push(route.query.redirect || "/");
   } catch (e) {
     const s = e?.response?.status;
+
+    if (s === 403 || s === 400) {
+      errorMessage.value =
+        "Identifiants invalides ou compte non confirmé. Veuillez vérifier vos informations ou confirmer votre adresse e-mail.";
+      return;
+    }
+
+    if (axios.isCancel && axios.isCancel(e)) {
+      return;
+    }
+
     const m = e?.response?.data?.error || e?.message;
     alert(`Échec connexion (${s ?? "network"}): ${m ?? "invalid credentials"}`);
   } finally {
     loading.value = false;
   }
 }
+
+function onForgotPassword() {
+  router.push({ name: "forgot-password" });
+}
 </script>
+
+<style scoped>
+@media (min-width: 960px) {
+  .login-view {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+.no-grow-details :deep(.v-input__details) {
+  min-height: 22px;
+}
+</style>
+
+<style>
+@media (min-width: 960px) {
+  html,
+  body {
+    overflow: hidden;
+  }
+}
+</style>

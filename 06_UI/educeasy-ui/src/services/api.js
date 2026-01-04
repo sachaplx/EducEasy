@@ -41,12 +41,20 @@ let redirecting = false;
 
 api.interceptors.request.use((config) => {
   const u = (config.url || '')
-  if (u.startsWith('/auth/')) {
+
+  const isPublicAuthEndpoint = 
+  u.startsWith('/auth/login') ||
+  u.startsWith('/auth/register') ||
+  u.startsWith('/auth/confirm') ||
+  u.startsWith('/auth/forgot-password') ||
+  u.startsWith('/auth/reset-password')
+
+  if (isPublicAuthEndpoint) {
     if (config.headers) {
       delete config.headers.Authorization
       delete config.headers.authorization
-      return config
-    }
+    }    
+    return config
   }
 
   const token = localStorage.getItem('token')
@@ -71,14 +79,36 @@ api.interceptors.response.use(
   (err) => {
     const status = err?.response?.status
     const url = err?.config?.url || ''
-    if ((status === 401 || status === 403) && !url.startsWith('/auth/')) {
+
+    if (!url.startsWith('/auth/')) {
       const auth = useAuthStore()
-      if (auth.isAuthenticated) auth.logout()
-      if (!redirecting && router.currentRoute.value.name !== 'login') {
-        redirecting = true
-        router.push({ name: 'login', query: { reason: 'expired' } }).finally(() => { redirecting = false })
+
+      // 401 : session expirée / non authentifié
+      if (status === 401) {
+        if (auth.isAuthenticated) auth.logout()
+        if (!redirecting && router.currentRoute.value.name !== 'login') {
+          redirecting = true
+          router
+            .push({ name: 'login', query: { reason: 'expired' } })
+            .finally(() => {
+              redirecting = false
+            })
+        }
+      }
+
+      // 403 : authentifié mais pas les droits
+      if (status === 403) {
+        if (!redirecting && router.currentRoute.value.name !== 'forbidden') {
+          redirecting = true
+          router
+            .push({ name: 'forbidden' })
+            .finally(() => {
+              redirecting = false
+            })
+        }
       }
     }
+
     return Promise.reject(err)
-  }
+  },
 )
