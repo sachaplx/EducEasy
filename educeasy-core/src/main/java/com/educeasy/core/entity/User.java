@@ -36,7 +36,7 @@ public class User {
 	private Role role;
 
 	@Column(nullable = false)
-	private Boolean actif = true;
+	private boolean actif;
 
 	@CreationTimestamp
 	@Column(name = "created_at", insertable = false, updatable = false)
@@ -82,11 +82,11 @@ public class User {
 		this.password = password;
 	}
 
-	public Boolean getActif() {
+	public boolean isActif() {
 		return actif;
 	}
 
-	public void setActif(Boolean actif) {
+	public void setActif(boolean actif) {
 		this.actif = actif;
 	}
 

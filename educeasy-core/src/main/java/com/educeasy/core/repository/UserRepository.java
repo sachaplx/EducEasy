@@ -8,5 +8,12 @@ import com.educeasy.core.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-	Optional<User> findByUsernameAndActifTrue(String username);
+	Optional<User> findByUsernameIgnoreCase(String username);
+	
+	Optional<User> findByEmailIgnoreCase(String email);
+	
+	Optional<User> findByUsernameOrEmailIgnoreCase(String username, String email);
+	
+	boolean existsByUsernameIgnoreCase(String username);
+	boolean existsByEmailIgnoreCase(String email);
 }
