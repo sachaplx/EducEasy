@@ -22,9 +22,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 	private final UserDetailsService userDetailsService;
 
-	public JwtAuthFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+	public JwtAuthFilter(JwtService jwtService, UserDetailsService uds) {
 		this.jwtService = jwtService;
-		this.userDetailsService = userDetailsService;
+		this.userDetailsService = uds;
 	}
 
 	@Override

@@ -12,6 +12,9 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "educeasy_inscription", indexes = { @Index(name = "idx_inscription_eleve", columnList = "eleve_id, date_sortie"), @Index(name = "idx_inscription_classe", columnList = "classe_id, date_sortie") })
@@ -23,11 +26,11 @@ public class Inscription {
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "eleve_id")
-	private Pupil pupil;
+	private Pupil eleve;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "classe_id")
-	private Classroom classroom;
+	private Classroom classe;
 
 	@Column(name = "date_entree", nullable = false)
 	private LocalDate dateEntree;
@@ -43,20 +46,20 @@ public class Inscription {
 		this.id = id;
 	}
 
-	public Pupil getPupil() {
-		return pupil;
+	public Pupil getEleve() {
+		return eleve;
 	}
 
-	public void setPupil(Pupil pupil) {
-		this.pupil = pupil;
+	public void setEleve(Pupil eleve) {
+		this.eleve = eleve;
 	}
 
-	public Classroom getClassroom() {
-		return classroom;
+	public Classroom getClasse() {
+		return classe;
 	}
 
-	public void setClassroom(Classroom classe) {
-		this.classroom = classe;
+	public void setClasse(Classroom classe) {
+		this.classe = classe;
 	}
 
 	public LocalDate getDateEntree() {
