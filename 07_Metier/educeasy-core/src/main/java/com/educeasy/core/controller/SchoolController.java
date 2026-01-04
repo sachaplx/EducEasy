@@ -2,9 +2,9 @@ package com.educeasy.core.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.educeasy.core.entity.School;
-import com.educeasy.core.repository.SchoolRepository;
+import com.educeasy.core.dto.SchoolInfo;
+import com.educeasy.core.service.SchoolService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,25 +23,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SchoolController {
 
-	private final SchoolRepository schoolRepository;
+	private final SchoolService schoolService;
 
-	@GetMapping
-	public List<School> list() {
-		return schoolRepository.findAll();
+	@GetMapping("/mine")
+	@PreAuthorize("hasRole('PRINCIPAL')")
+	public ResponseEntity<List<SchoolInfo>> mySchools(Authentication auth) {
+		return ResponseEntity.ok(schoolService.listMine(auth.getName()));
 	}
 
-	@PreAuthorize("hasRole('PRINCIPAL')")
 	@PostMapping
-	public School create(@Valid	@RequestBody School e) {
-		return schoolRepository.save(e);
+	@PreAuthorize("hasRole('PRINCIPAL')")
+	public ResponseEntity<SchoolInfo> create(@Valid	@RequestBody SchoolInfo info, Authentication auth) throws Exception {
+		return ResponseEntity.ok(schoolService.create(auth.getName(), info));
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<School> get(@PathVariable Long id) {
-		return schoolRepository.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+	public ResponseEntity<SchoolInfo> get(@PathVariable Long id) {
+		return ResponseEntity.ok(schoolService.getOne(id));
 	}
 
-	public SchoolController(SchoolRepository school) {
-		this.schoolRepository = school;
+	public SchoolController(SchoolService school) {
+		this.schoolService = school;
 	}
 }

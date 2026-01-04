@@ -11,9 +11,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "educeasy_classe", indexes = @Index(name = "idx_classe_ecole", columnList = "ecole_id"), uniqueConstraints = @UniqueConstraint(name = "uk_classe_unique", columnNames = { "ecole_id", "nom", "annee_scolaire" }))
@@ -25,7 +22,7 @@ public class Classroom {
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "ecole_id")
-	private School ecole;
+	private School school;
 
 	@Column(nullable = false, length = 50)
 	private String nom;
@@ -47,12 +44,12 @@ public class Classroom {
 		this.id = id;
 	}
 
-	public School getEcole() {
-		return ecole;
+	public School getSchool() {
+		return school;
 	}
 
-	public void setEcole(School ecole) {
-		this.ecole = ecole;
+	public void setSchool(School school) {
+		this.school = school;
 	}
 
 	public String getNom() {
