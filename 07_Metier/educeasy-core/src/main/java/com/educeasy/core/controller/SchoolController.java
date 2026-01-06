@@ -16,11 +16,9 @@ import com.educeasy.core.dto.SchoolInfo;
 import com.educeasy.core.service.SchoolService;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/schools")
-@RequiredArgsConstructor
 public class SchoolController {
 
 	private final SchoolService schoolService;
@@ -33,12 +31,15 @@ public class SchoolController {
 
 	@PostMapping
 	@PreAuthorize("hasRole('PRINCIPAL')")
-	public ResponseEntity<SchoolInfo> create(@Valid	@RequestBody SchoolInfo info, Authentication auth) throws Exception {
+	public ResponseEntity<SchoolInfo> create(@Valid
+	@RequestBody
+	SchoolInfo info, Authentication auth) throws Exception {
 		return ResponseEntity.ok(schoolService.create(auth.getName(), info));
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<SchoolInfo> get(@PathVariable Long id) {
+	public ResponseEntity<SchoolInfo> get(@PathVariable
+	Long id) {
 		return ResponseEntity.ok(schoolService.getOne(id));
 	}
 

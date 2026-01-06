@@ -16,7 +16,6 @@ import com.educeasy.core.repository.InscriptionRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class ClassroomService {
 
 	private final ClassroomRepository classroomRepository;
