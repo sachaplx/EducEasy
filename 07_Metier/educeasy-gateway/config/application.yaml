@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: core
+          uri: http://educeasy-core:4700
+		  predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
