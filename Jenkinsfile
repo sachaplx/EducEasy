@@ -35,5 +35,11 @@ pipeline {
         }
       }
     }
+
+    stage('Archive JARs') {
+      steps {
+        archiveArtifacts artifacts: '07_Metier/educeasy-core/target/*.jar,07_Metier/educeasy-gateway/target/*.jar', fingerprint: true
+      }
+    }
   }
 }
