@@ -3,7 +3,7 @@ import router from '../router'
 import { useAuthStore } from '../stores/auth'
 
 export const api = axios.create({
-  baseURL: '/',
+  baseURL: '/api',
   timeout: 15000,
 })
 
