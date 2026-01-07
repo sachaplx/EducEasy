@@ -5,6 +5,14 @@ pipeline {
     timestamps()
   }
 
+  environment {
+    CORE_DOCKER_DIR = "/opt/educeasy/core"
+    GATEWAY_DOCKER_DIR = "/opt/educeasy/gateway"
+    FRONT_DOCKER_DIR = "/opt/educeasy/front"
+
+    MAIN_DIR = "/opt/educeasy"
+  }
+
   stages {
     stage('Checkout') {
       steps { checkout scm }
@@ -36,9 +44,65 @@ pipeline {
       }
     }
 
-    stage('Archive JARs') {
+    stage('Build Front dist') {
       steps {
-        archiveArtifacts artifacts: '07_Metier/educeasy-core/target/*.jar,07_Metier/educeasy-gateway/target/*.jar', fingerprint: true
+        sh '''
+          set -e
+          test -d "$WORKSPACE/06_UI/educeasy-ui"
+          test -d "$WORKSPACE/06_UI/educeasy-ui/package.json"
+
+          docker run --rm -v "$WORKSPACE/06_UI/educeasy-ui":/app -w /app node:20-alpine sh -lc "npm ci && npm run build"
+
+          test -d "$WORKSPACE/06_UI/educeasy-ui/dist"
+        '''
+      }
+    }
+
+    stage('Copy artifacts to /opt/educeasy') {
+      steps {
+        sh '''
+          set -e
+
+          CORE_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-core/target/*.jar | head -n 1)
+          GATEWAY_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-gateway/target/*.jar | head -n 1)
+
+          echo "Copy core jar -> /opt/educeasy/core/app.jar"
+          cp -f "$CORE_JAR" /opt/educeasy/core/app.jar
+
+          echo "Copy gateway jar -> /opt/educeasy/gateway/app.jar"
+          cp -f "$GATEWAY_JAR" /opt/educeasy/gateway/app.jar
+
+          echo "Copy front dist -> /opt/educeasy/front/dist"
+          rm -rf /opt/educeasy/front/dist
+          mkdir -p /opt/educeasy/front/dist
+          cp -r "$WORKSPACE/06_UI/educeasy-ui/dist/"* /opt/educeasy/front/dist/
+        '''
+      }
+    }
+
+    stage('Build Docker images (VM Dockerfiles)') {
+      steps {
+        sh '''
+          set -e
+          test -f "$CORE_DOCKER_DIR/Dockerfile"
+          test -f "$GATEWAY_DOCKER_DIR/Dockerfile"
+          test -f "$FRONT_DOCKER_DIR/Dockerfile"
+
+          docker build -t educeasy-core:latest "$CORE_DOCKER_DIR"
+          docker build -t educeasy-gateway:latest "$GATEWAY_DOCKER_DIR"
+          docker build -t educeasy-front:latest "$FRONT_DOCKER_DIR"
+        '''
+      }
+    }
+
+    stage('Deploy (docker compose)') {
+      steps {
+        sh '''
+          set -e
+          cd "$PROD_DIR"
+          docker compose up -d --remove-orphans
+          docker compose ps
+        '''
       }
     }
   }
