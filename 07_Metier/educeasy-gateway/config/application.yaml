@@ -7,7 +7,7 @@ spring:
       routes:
         - id: core
           uri: http://educeasy-core:4700
-		  predicates:
+          predicates:
             - Path=/api/**
           filters:
             - StripPrefix=1
