@@ -100,7 +100,7 @@ pipeline {
       steps {
         sh '''
           set -e
-          cd "$PROD_DIR"
+          cd "$MAIN_DIR"
           docker compose up -d --remove-orphans
           docker compose ps
         '''
