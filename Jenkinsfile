@@ -49,7 +49,7 @@ pipeline {
         sh '''
           set -e
           test -d "$WORKSPACE/06_UI/educeasy-ui"
-          test -d "$WORKSPACE/06_UI/educeasy-ui/package.json"
+          test -f "$WORKSPACE/06_UI/educeasy-ui/package.json"
 
           docker run --rm -v "$WORKSPACE/06_UI/educeasy-ui":/app -w /app node:20-alpine sh -lc "npm ci && npm run build"
 
