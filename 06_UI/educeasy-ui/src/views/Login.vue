@@ -120,15 +120,20 @@ function onRegister() {
 async function submit() {
   loading.value = true;
   try {
-    const valid = await form.value?.validate();
-    if (!valid) {
-      return;
-    }
+    const res = await form.value?.validate?.();
+    const isValid = typeof res === "boolean" ? res : res?.valid;
+    if (!isValid) return;
+
     await auth.login({
       username: username.value,
       password: password.value,
     });
-    router.push(route.query.redirect || "/");
+
+    // redirect safe (évite open-redirect)
+    const q = route.query.redirect;
+    const redirect = typeof q === "string" && q.startsWith("/") ? q : "/";
+
+    router.push(redirect);
   } catch (e) {
     const s = e?.response?.status;
 
@@ -138,9 +143,7 @@ async function submit() {
       return;
     }
 
-    if (axios.isCancel && axios.isCancel(e)) {
-      return;
-    }
+    if (axios.isCancel(e)) return;
 
     const m = e?.response?.data?.error || e?.message;
     alert(`Échec connexion (${s ?? "network"}): ${m ?? "invalid credentials"}`);
