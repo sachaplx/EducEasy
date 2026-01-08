@@ -9,4 +9,6 @@ import com.educeasy.core.entity.School;
 public interface SchoolRepository extends JpaRepository<School, Long> {
 
 	List<School> findByPrincipalUserId(Long userId);
+
+	boolean existsByIdAndPrincipalUserId(Long schoolId, Long userId);
 }

@@ -34,7 +34,7 @@ public class SchoolService {
 	public SchoolInfo create(String username, SchoolInfo info) throws Exception {
 		User me = userRepository.findByUsernameIgnoreCase(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-		if (me.getRole() != Role.PRINCIPAL) {
+		if (me.getRole() != Role.PRINCIPAL && me.getRole() != Role.ADMIN) {
 			throw new AccessDeniedException("Access denied : you are not a principal");
 		}
 

@@ -2,12 +2,20 @@ package com.educeasy.core.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.educeasy.core.dto.PupilInfo;
+import com.educeasy.core.entity.Classroom;
+import com.educeasy.core.entity.Gender;
 import com.educeasy.core.entity.Pupil;
 import com.educeasy.core.entity.Role;
+import com.educeasy.core.entity.School;
+import com.educeasy.core.entity.User;
 import com.educeasy.core.repository.InscriptionRepository;
 import com.educeasy.core.repository.PupilRepository;
 import com.educeasy.core.repository.UserRepository;
@@ -25,14 +33,14 @@ public class PupilService {
 		List<Pupil> pupils = (query != null && !query.isBlank()) ? pupilRepository.search(query) : pupilRepository.findAllByOrderByNomAsc();
 
 		if (pupils.size() > 10) {
-			pupils.subList(0, 10);
+			pupils = pupils.subList(0, 10);
 		}
 
 		return getListPupilInfo(pupils);
 	}
 
 	public List<PupilInfo> searchVisible(String username, String query) {
-		var me = userRepository.findByUsernameIgnoreCase(username).orElseThrow();
+		User me = userRepository.findByUsernameIgnoreCase(username).orElseThrow();
 		List<Pupil> list = (me.getRole() == Role.TEACHER) ? pupilRepository.searchVisibleForTeacher(me.getId(), query) : pupilRepository.searchVisibleForPrincipal(me.getId(), query);
 
 		return list.stream().map(this::toDTO).toList();
@@ -56,10 +64,10 @@ public class PupilService {
 		info.setNom(p.getNom());
 		info.setPrenom(p.getPrenom());
 		info.setGender(p.getGender() != null ? p.getGender().name() : null);
-		
+
 		inscriptionRepository.findCurrentByPupil(p.getId()).ifPresent(i -> {
-			var c = i.getClassroom();
-			var s = c.getSchool();
+			Classroom c = i.getClassroom();
+			School s = c.getSchool();
 			if (c != null) {
 				info.setClassroomId(c.getId());
 				info.setClassroom(c.getNom());
@@ -74,12 +82,44 @@ public class PupilService {
 	}
 
 	public PupilInfo getIfVisible(String username, Long pupilId) {
-		var me = userRepository.findByUsernameIgnoreCase(username).orElseThrow();
+		User me = userRepository.findByUsernameIgnoreCase(username).orElseThrow();
 		boolean ok = (me.getRole() == Role.TEACHER) ? pupilRepository.existsByIdAndActiveInTeacherClassrooms(pupilId, me.getId()) : pupilRepository.existsByIdAndActiveInSchoolsOfPrincipal(pupilId, me.getId());
 		if (!ok)
 			throw new SecurityException("Forbidden");
-		var p = pupilRepository.findById(pupilId).orElseThrow();
+		Pupil p = pupilRepository.findById(pupilId).orElseThrow();
 		return toDTO(p);
+	}
+
+	public PupilInfo toInfo(Pupil p) {
+		return toDTO(p);
+	}
+
+	@Transactional
+	public Pupil createPupil(Map<String, String> body) {
+		String nom = body == null ? null : body.get("nom");
+		String prenom = body == null ? null : body.get("prenom");
+		String genderStr = body == null ? null : body.get("gender");
+
+		if (nom == null || nom.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nom manquant.");
+		}
+		if (prenom == null || prenom.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prénom manquant.");
+		}
+		Gender gender = Gender.BOY;
+		if (genderStr != null && !genderStr.isBlank()) {
+			try {
+				gender = Gender.valueOf(genderStr.trim().toUpperCase());
+			} catch (Exception e) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Genre invalide.");
+			}
+		}
+
+		Pupil p = new Pupil();
+		p.setNom(nom.trim());
+		p.setPrenom(prenom.trim());
+		p.setGender(gender);
+		return pupilRepository.save(p);
 	}
 
 	public PupilService(PupilRepository pupilRepository, UserRepository userRepository, InscriptionRepository inscriptionRepository) {
