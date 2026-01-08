@@ -72,7 +72,7 @@ pipeline {
 
           echo "Copy gateway jar -> /opt/educeasy/gateway/app.jar"
           mkdir -p /opt/educeasy/gateway/config
-		  cp -f "$WORKSPACE/07_Metier/educeasy-core/educeasy-gateway/config/application.yml" /opt/educeasy/gateway/config/application.yml
+		  cp -f "$WORKSPACE/07_Metier/educeasy-gateway/config/application.yml" /opt/educeasy/gateway/config/application.yml
           cp -f "$GATEWAY_JAR" /opt/educeasy/gateway/app.jar
 
           echo "Copy front dist -> /opt/educeasy/front/dist"
