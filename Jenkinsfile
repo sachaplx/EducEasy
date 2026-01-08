@@ -64,13 +64,15 @@ pipeline {
         sh '''
           set -e
 
-          CORE_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-core/target/*.jar | grep -v '\.original$' | head -n 1)
-          GATEWAY_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-gateway/target/*.jar | grep -v '\.original$' | head -n 1)
+          CORE_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-core/target/*.jar | head -n 1)
+          GATEWAY_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-gateway/target/*.jar | head -n 1)
 
           echo "Copy core jar -> /opt/educeasy/core/app.jar"
           cp -f "$CORE_JAR" /opt/educeasy/core/app.jar
 
           echo "Copy gateway jar -> /opt/educeasy/gateway/app.jar"
+          mkdir -p /opt/educeasy/gateway/config
+		  cp -f "$WORKSPACE/07_Metier/educeasy-core/educeasy-gateway/config/application.yml" /opt/educeasy/gateway/config/application.yml
           cp -f "$GATEWAY_JAR" /opt/educeasy/gateway/app.jar
 
           echo "Copy front dist -> /opt/educeasy/front/dist"
