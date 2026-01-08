@@ -17,7 +17,7 @@ public class EmailService {
 	@Value("${app.url}")
 	private String appUrl;
 
-	@Value("${app.mail.from:aide.educeasy@gmail.com}")
+	@Value("${app.mail.from:noreply@educeasy.fr}")
 	private String mailFrom;
 
 	public EmailService(JavaMailSender mailSender) {

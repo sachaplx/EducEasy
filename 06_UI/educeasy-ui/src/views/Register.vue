@@ -186,13 +186,11 @@ async function onSubmit() {
 
   try {
     loading.value = true;
-    await api.post("/auth/register", payload);
-    await auth.login({
-      identifier: payload.username,
-      password: payload.password,
-    });
-
-    router.push({ name: "home" });
+    const res = await api.post("/auth/register", payload);
+    snackbar(
+      res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer."
+    );
+    router.push({ name: "login" });
   } catch (e) {
     const msg =
       e?.response?.data?.message || e?.response?.data?.error || e?.message;
