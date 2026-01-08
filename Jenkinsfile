@@ -68,6 +68,8 @@ pipeline {
           GATEWAY_JAR=$(ls -1 "$WORKSPACE"/07_Metier/educeasy-gateway/target/*.jar | head -n 1)
 
           echo "Copy core jar -> /opt/educeasy/core/app.jar"
+		  mkdir -p /opt/educeasy/core/config
+		  cp -f "$WORKSPACE/07_Metier/educeasy-core/config/application.yaml" /opt/educeasy/core/config/application.yaml
           cp -f "$CORE_JAR" /opt/educeasy/core/app.jar
 
           echo "Copy gateway jar -> /opt/educeasy/gateway/app.jar"
