@@ -102,6 +102,11 @@ const rules = {
 };
 
 onMounted(() => {
+  const saved = localStorage.getItem("prefillEmail");
+  if (saved) {
+    username.value = saved;
+    localStorage.removeItem("prefillEmail");
+  }
   if (route.query.reset === "ok") {
     infoMessage.value =
       "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.";

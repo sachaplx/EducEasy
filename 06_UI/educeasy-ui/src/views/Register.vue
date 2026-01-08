@@ -190,6 +190,7 @@ async function onSubmit() {
     snackbar(
       res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer."
     );
+    localStorage.setItem("prefillEmail", form.value.email);
     router.push({ name: "login" });
   } catch (e) {
     const msg =
