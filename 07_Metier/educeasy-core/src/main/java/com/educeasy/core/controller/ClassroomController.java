@@ -21,6 +21,8 @@ import com.educeasy.core.dto.PupilInfo;
 import com.educeasy.core.service.AuthService;
 import com.educeasy.core.service.ClassroomService;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @RestController
 @RequestMapping("/classrooms")
 public class ClassroomController {
@@ -63,11 +65,9 @@ public class ClassroomController {
 	@PostMapping("/{id}/maitre")
 	public ResponseEntity<Void> setMaitre(@PathVariable
 	Long id, @RequestBody
-	Map<String, String> body, Authentication auth) {
-	    System.out.println("SET_MAITRE HIT id=" + id
-	            + " user=" + (auth != null ? auth.getName() : "null")
-	            + " authorities=" + (auth != null ? auth.getAuthorities() : "null"));
-
+	Map<String, String> body, HttpServletResponse resp) {
+		resp.setHeader("X-HIT-MAITRE", "1");
+	    System.out.println("HIT setMaitre id=" + id + " body=" + body);
 		classroomService.setMaitreByEmail(id, body == null ? null : body.get("email"));
 		return ResponseEntity.noContent().build();
 	}
