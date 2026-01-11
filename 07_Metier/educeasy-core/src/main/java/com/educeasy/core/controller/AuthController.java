@@ -96,16 +96,18 @@ public class AuthController {
 		return ResponseEntity.ok(authService.changePassword(req));
 	}
 
-	@GetMapping
-	public InviteInfoResponse info(@RequestParam String token) {
+	@GetMapping("/invite")
+	public InviteInfoResponse info(@RequestParam
+	String token) {
 		return authService.getInviteInfo(token);
 	}
-	
-	@PostMapping("/complete")
-	public void complete(@RequestBody CompleteInviteRequest req) {
+
+	@PostMapping("/invite/complete")
+	public void complete(@RequestBody
+	CompleteInviteRequest req) {
 		authService.complete(req);
 	}
-	
+
 	public AuthController(AuthService authService) {
 		this.authService = authService;
 	}
