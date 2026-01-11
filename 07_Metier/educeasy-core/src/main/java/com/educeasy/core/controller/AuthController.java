@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.educeasy.core.dto.AuthInfo.AuthResponse;
 import com.educeasy.core.dto.AuthInfo.ChangePasswordRequest;
 import com.educeasy.core.dto.AuthInfo.ChangePasswordResponse;
+import com.educeasy.core.dto.AuthInfo.CompleteInviteRequest;
 import com.educeasy.core.dto.AuthInfo.ForgotPasswordRequest;
 import com.educeasy.core.dto.AuthInfo.ForgotPasswordResponse;
+import com.educeasy.core.dto.AuthInfo.InviteInfoResponse;
 import com.educeasy.core.dto.AuthInfo.LoginRequest;
 import com.educeasy.core.dto.AuthInfo.ProfileResponse;
 import com.educeasy.core.dto.AuthInfo.RegisterRequest;
@@ -94,6 +96,16 @@ public class AuthController {
 		return ResponseEntity.ok(authService.changePassword(req));
 	}
 
+	@GetMapping
+	public InviteInfoResponse info(@RequestParam String token) {
+		return authService.getInviteInfo(token);
+	}
+	
+	@PostMapping("/complete")
+	public void complete(@RequestBody CompleteInviteRequest req) {
+		authService.complete(req);
+	}
+	
 	public AuthController(AuthService authService) {
 		this.authService = authService;
 	}

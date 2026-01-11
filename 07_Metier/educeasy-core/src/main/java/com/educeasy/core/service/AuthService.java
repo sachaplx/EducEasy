@@ -20,8 +20,10 @@ import org.springframework.web.server.ResponseStatusException;
 import com.educeasy.core.dto.AuthInfo.AuthResponse;
 import com.educeasy.core.dto.AuthInfo.ChangePasswordRequest;
 import com.educeasy.core.dto.AuthInfo.ChangePasswordResponse;
+import com.educeasy.core.dto.AuthInfo.CompleteInviteRequest;
 import com.educeasy.core.dto.AuthInfo.ForgotPasswordRequest;
 import com.educeasy.core.dto.AuthInfo.ForgotPasswordResponse;
+import com.educeasy.core.dto.AuthInfo.InviteInfoResponse;
 import com.educeasy.core.dto.AuthInfo.LoginRequest;
 import com.educeasy.core.dto.AuthInfo.ProfileResponse;
 import com.educeasy.core.dto.AuthInfo.RegisterRequest;
@@ -32,13 +34,17 @@ import com.educeasy.core.dto.AuthInfo.ResetPasswordValidateRequest;
 import com.educeasy.core.dto.AuthInfo.ResetPasswordValidateResponse;
 import com.educeasy.core.dto.AuthInfo.UpdateEmailRequest;
 import com.educeasy.core.dto.AuthInfo.UpdateEmailResponse;
+import com.educeasy.core.entity.Classroom;
+import com.educeasy.core.entity.MaitreInvitation;
 import com.educeasy.core.entity.PasswordResetToken;
 import com.educeasy.core.entity.Principal;
 import com.educeasy.core.entity.Professor;
 import com.educeasy.core.entity.Role;
+import com.educeasy.core.entity.School;
 import com.educeasy.core.entity.User;
 import com.educeasy.core.entity.VerificationToken;
 import com.educeasy.core.repository.ClassroomRepository;
+import com.educeasy.core.repository.MaitreInvitationRepository;
 import com.educeasy.core.repository.PasswordResetTokenRepository;
 import com.educeasy.core.repository.PrincipalRepository;
 import com.educeasy.core.repository.ProfessorRepository;
@@ -60,6 +66,8 @@ public class AuthService {
 	private final ProfessorRepository professorRepository;
 
 	private final PrincipalRepository principalRepository;
+
+	private final MaitreInvitationRepository maitreInvitationRepository;
 
 	private final JwtService jwtService;
 
@@ -266,6 +274,81 @@ public class AuthService {
 		return new ChangePasswordResponse("Mot de passe mis à jour avec succès.");
 	}
 
+	@Transactional(readOnly = true)
+	public InviteInfoResponse getInviteInfo(String token) {
+		MaitreInvitation inv = requireValidInvite(token);
+		Classroom c = inv.getClassroom();
+		School s = c.getSchool();
+		return new InviteInfoResponse(inv.getEmail(), c.getId(), c.getNom(), s != null ? s.getNom() : null);
+	}
+
+	@Transactional
+	public void complete(CompleteInviteRequest req) {
+		if (req == null || req.token() == null || req.token().isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token manquant.");
+		}
+
+		MaitreInvitation inv = requireValidInvite(req.token());
+		String email = inv.getEmail();
+
+		// 1) User (create if missing)
+		var user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> createTeacherUser(req, email));
+
+		// 2) Professor (create if missing)
+		var prof = professorRepository.findByUserId(user.getId()).orElseGet(() -> createProfessor(req, user));
+
+		// 3) Assign as maitre
+		var classroom = inv.getClassroom();
+		classroom.setMaitre(prof);
+		classroomRepository.save(classroom);
+
+		// 4) Mark used
+		inv.setUsedAt(LocalDateTime.now());
+		maitreInvitationRepository.save(inv);
+	}
+
+	private MaitreInvitation requireValidInvite(String token) {
+		MaitreInvitation inv = maitreInvitationRepository.findByToken(token).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation introuvable."));
+		if (inv.getUsedAt() != null) {
+			throw new ResponseStatusException(HttpStatus.GONE, "Invitation déjà utilisée.");
+		}
+
+		if (inv.getExpiresAt() != null && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
+			throw new ResponseStatusException(HttpStatus.GONE, "Invitation expirée.");
+		}
+		return inv;
+	}
+
+	private User createTeacherUser(CompleteInviteRequest req, String email) {
+		if (req.username() == null || req.username().isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username manquant.");
+		}
+		if (req.password() == null || req.password().isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe manquant.");
+		}
+
+		User u = new User();
+		u.setEmail(email);
+		u.setUsername(req.username().trim());
+		u.setPassword(passwordEncoder.encode(req.password()));
+		u.setRole(Role.TEACHER);
+		u.setActif(true);
+		return userRepository.save(u);
+	}
+
+	private Professor createProfessor(CompleteInviteRequest req, User user) {
+		if (req.nom() == null || req.nom().isBlank() || req.prenom() == null || req.prenom().isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nom/prénom manquants.");
+		}
+
+		Professor p = new Professor();
+		p.setUser(user);
+		p.setNom(req.nom().trim());
+		p.setPrenom(req.prenom().trim());
+		p.setTelephone(req.telephone());
+		return professorRepository.save(p);
+	}
+
 	private PasswordResetToken getValidPasswordResetToken(String token) {
 		PasswordResetToken prt = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid token."));
 
@@ -289,12 +372,13 @@ public class AuthService {
 		return userRepository.findByUsernameIgnoreCase(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find user"));
 	}
 
-	public AuthService(ClassroomRepository classroomRepository, AuthenticationManager authManager, UserDetailsService uds, UserRepository userRepository, ProfessorRepository professorRepository, JwtService jwtService, PasswordEncoder passwordEncoder, PrincipalRepository principalRepository, VerificationTokenRepository verificationTokenRepository, EmailService emailService, PasswordResetTokenRepository passwordResetTokenRepository) {
+	public AuthService(ClassroomRepository classroomRepository, AuthenticationManager authManager, UserDetailsService uds, UserRepository userRepository, ProfessorRepository professorRepository, MaitreInvitationRepository maitreInvitationRepository, JwtService jwtService, PasswordEncoder passwordEncoder, PrincipalRepository principalRepository, VerificationTokenRepository verificationTokenRepository, EmailService emailService, PasswordResetTokenRepository passwordResetTokenRepository) {
 		this.classroomRepository = classroomRepository;
 		this.authManager = authManager;
 		this.userDetailsService = uds;
 		this.userRepository = userRepository;
 		this.professorRepository = professorRepository;
+		this.maitreInvitationRepository = maitreInvitationRepository;
 		this.jwtService = jwtService;
 		this.passwordEncoder = passwordEncoder;
 		this.principalRepository = principalRepository;

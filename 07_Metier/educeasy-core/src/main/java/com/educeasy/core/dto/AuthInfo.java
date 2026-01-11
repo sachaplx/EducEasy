@@ -50,19 +50,30 @@ public class AuthInfo {
 
 	public record ResetPasswordValidateResponse(boolean valid, String message) {
 	}
-	
+
 	public record ProfileResponse(Long id, String username, String email, String role, String firstName, String lastName) {
 	}
-	 
-	public record UpdateEmailRequest(@NotBlank @Email String email, @NotBlank String currentPassword) {
+
+	public record UpdateEmailRequest(@NotBlank
+	@Email
+	String email, @NotBlank
+	String currentPassword) {
 	}
-	
+
 	public record UpdateEmailResponse(String email, String message) {
 	}
-	
-	public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {
+
+	public record ChangePasswordRequest(@NotBlank
+	String currentPassword, @NotBlank
+	String newPassword) {
+	}
+
+	public record ChangePasswordResponse(String message) {
+	}
+
+	public record InviteInfoResponse(String email, Long classroomId, String classroomName, String schoolName) {
 	}
 	
-	public record ChangePasswordResponse(String message) {
+	public record CompleteInviteRequest(String token, String username, String password, String prenom, String nom, String telephone) {
 	}
 }

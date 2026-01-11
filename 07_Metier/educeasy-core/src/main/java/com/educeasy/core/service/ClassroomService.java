@@ -41,6 +41,8 @@ public class ClassroomService {
 
 	private final PupilService pupilService;
 
+	private final MaitreInvitationService maitreInvitationService;
+	
 	@Transactional(readOnly = true)
 	public List<PupilInfo> activePupilsOfClassroom(Long classroomId) {
 		return pupilService.getListPupilInfo(inscriptionRepository.findPupilsActifsByClassroom(classroomId));
@@ -84,15 +86,28 @@ public class ClassroomService {
 
 	@Transactional
 	public void setMaitreByEmail(Long id, String email) {
-		if (email == null || email.isBlank()) {
+		String emailClean = email == null ? null : email.trim();
+		if (emailClean == null || emailClean.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email manquant.");
 		}
-		String emailClean = email.trim();
+		
 		Classroom classroom = classroomRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Classe introuvable."));
-		User user = userRepository.findByEmailIgnoreCase(emailClean).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable."));
-		Professor professor = professorRepository.findByUserId(user.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur non professeur."));
+		var userOpt = userRepository.findByEmailIgnoreCase(emailClean);
+		
+		if (userOpt.isEmpty()) {
+			var inv = maitreInvitationService.createOrReuse(id, emailClean);
+			maitreInvitationService.send(inv);
+			return;
+		}
 
-		classroom.setMaitre(professor);
+		var profOpt = professorRepository.findByUserId(userOpt.get().getId());
+		if (profOpt.isEmpty()) {
+			var inv = maitreInvitationService.createOrReuse(id, emailClean);
+			maitreInvitationService.send(inv);
+			return;
+		}
+		
+		classroom.setMaitre(profOpt.get());
 		classroomRepository.save(classroom);
 	}
 
@@ -151,12 +166,13 @@ public class ClassroomService {
 		return toDTO(c);
 	}
 
-	public ClassroomService(ClassroomRepository classroom, InscriptionRepository inscription, UserRepository user, SchoolRepository school, ProfessorRepository professor, PupilService pupil) {
+	public ClassroomService(ClassroomRepository classroom, InscriptionRepository inscription, UserRepository user, SchoolRepository school, ProfessorRepository professor, PupilService pupil, MaitreInvitationService maitre) {
 		this.classroomRepository = classroom;
 		this.inscriptionRepository = inscription;
 		this.userRepository = user;
 		this.schoolRepository = school;
 		this.professorRepository = professor;
 		this.pupilService = pupil;
+		this.maitreInvitationService = maitre;
 	}
 }
