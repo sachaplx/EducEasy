@@ -60,7 +60,7 @@ public class ClassroomController {
 		return classroomService.getClassroomsforSchool(id);
 	}
 
-	@PutMapping("/{id}/maitre")
+	@PostMapping("/{id}/maitre")
 	@PreAuthorize("hasAnyRole('PRINCIPAL', 'ADMIN')")
 	public ResponseEntity<Void> setMaitre(@PathVariable
 	Long id, @RequestBody
