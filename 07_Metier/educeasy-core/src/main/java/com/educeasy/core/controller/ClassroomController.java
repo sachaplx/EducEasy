@@ -61,7 +61,6 @@ public class ClassroomController {
 	}
 
 	@PostMapping("/{id}/maitre")
-	@PreAuthorize("hasAnyAuthority('ROLE_PRINCIPAL','ROLE_ADMIN')")
 	public ResponseEntity<Void> setMaitre(@PathVariable
 	Long id, @RequestBody
 	Map<String, String> body, Authentication auth) {
