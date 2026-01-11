@@ -64,7 +64,11 @@ public class ClassroomController {
 	@PreAuthorize("hasAnyRole('PRINCIPAL', 'ADMIN')")
 	public ResponseEntity<Void> setMaitre(@PathVariable
 	Long id, @RequestBody
-	Map<String, String> body) {
+	Map<String, String> body, Authentication auth) {
+	    System.out.println("SET_MAITRE HIT id=" + id
+	            + " user=" + (auth != null ? auth.getName() : "null")
+	            + " authorities=" + (auth != null ? auth.getAuthorities() : "null"));
+
 		classroomService.setMaitreByEmail(id, body == null ? null : body.get("email"));
 		return ResponseEntity.noContent().build();
 	}
