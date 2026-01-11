@@ -345,7 +345,6 @@ public class AuthService {
 		p.setUser(user);
 		p.setNom(req.nom().trim());
 		p.setPrenom(req.prenom().trim());
-		p.setTelephone(req.telephone());
 		return professorRepository.save(p);
 	}
 

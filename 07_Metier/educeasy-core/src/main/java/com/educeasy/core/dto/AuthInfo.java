@@ -73,7 +73,7 @@ public class AuthInfo {
 
 	public record InviteInfoResponse(String email, Long classroomId, String classroomName, String schoolName) {
 	}
-	
-	public record CompleteInviteRequest(String token, String username, String password, String prenom, String nom, String telephone) {
+
+	public record CompleteInviteRequest(String token, String username, String password, String prenom, String nom) {
 	}
 }
