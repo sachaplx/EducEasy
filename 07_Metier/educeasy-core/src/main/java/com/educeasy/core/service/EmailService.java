@@ -1,5 +1,7 @@
 package com.educeasy.core.service;
 
+import java.time.LocalDateTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,9 @@ public class EmailService {
 	@Value("${app.mail.from:noreply@educeasy.fr}")
 	private String mailFrom;
 
+	@Value("${app.invite.expire-days:7}")
+	private long expiresDays;
+	
 	public EmailService(JavaMailSender mailSender) {
 		this.mailSender = mailSender;
 	}
@@ -61,6 +66,32 @@ public class EmailService {
 
 		sendSimple(mailFrom, oldEmail, subject, textOld);
 		sendSimple(mailFrom, newEmail, subject, textNew);
+	}
+
+	public void sendInviteMail(String toEmail, String classroomName, String schoolName, String link) {
+		String subject = "Invitation - accès à la classe" + classroomName;
+		String body = """
+			      Bonjour,
+
+			      Vous avez été invité(e) à rejoindre EducEasy en tant qu'enseignant(e) (maître de classe).
+
+			      École : %s
+			      Classe : %s
+
+			      Pour finaliser votre inscription et accéder à la classe, cliquez sur ce lien :
+			      %s
+
+			      Si vous n'êtes pas concerné(e), ignorez cet email.
+			      """.formatted(schoolName, classroomName, link);
+		sendSimple(mailFrom, toEmail, subject, body);
+	}
+	
+	public String buildInviteLink(String token) {
+		return appUrl.replaceAll("/$", "") + "/invite?token=" + token;
+	}
+	
+	public LocalDateTime defaultExpiry() {
+		return LocalDateTime.now().plusDays(expiresDays);
 	}
 
 	private void sendSimple(String from, String to, String subject, String text) {

@@ -27,7 +27,7 @@ public class SecurityConfig {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable());
 		http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-		http.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().requestMatchers("/auth/login", "/auth/register", "/auth/confirm", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate", "/ping").permitAll().anyRequest().authenticated());
+		http.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().requestMatchers("/auth/login", "/auth/register", "/auth/confirm", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate", "/auth/invite", "/auth/invite/complete", "/ping").permitAll().anyRequest().authenticated());
 		http.authenticationProvider(daoProvider);
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
