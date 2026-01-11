@@ -15,6 +15,7 @@ import com.educeasy.core.dto.ClassroomInfo;
 import com.educeasy.core.dto.PupilInfo;
 import com.educeasy.core.entity.Classroom;
 import com.educeasy.core.entity.Inscription;
+import com.educeasy.core.entity.MaitreInvitation;
 import com.educeasy.core.entity.Professor;
 import com.educeasy.core.entity.Pupil;
 import com.educeasy.core.entity.Role;
@@ -42,7 +43,7 @@ public class ClassroomService {
 	private final PupilService pupilService;
 
 	private final MaitreInvitationService maitreInvitationService;
-	
+
 	@Transactional(readOnly = true)
 	public List<PupilInfo> activePupilsOfClassroom(Long classroomId) {
 		return pupilService.getListPupilInfo(inscriptionRepository.findPupilsActifsByClassroom(classroomId));
@@ -90,23 +91,23 @@ public class ClassroomService {
 		if (emailClean == null || emailClean.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email manquant.");
 		}
-		
+
 		Classroom classroom = classroomRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Classe introuvable."));
 		var userOpt = userRepository.findByEmailIgnoreCase(emailClean);
-		
+
 		if (userOpt.isEmpty()) {
-			var inv = maitreInvitationService.createOrReuse(id, emailClean);
+			MaitreInvitation inv = maitreInvitationService.createOrReuse(id, emailClean);
 			maitreInvitationService.send(inv);
 			return;
 		}
 
 		var profOpt = professorRepository.findByUserId(userOpt.get().getId());
 		if (profOpt.isEmpty()) {
-			var inv = maitreInvitationService.createOrReuse(id, emailClean);
+			MaitreInvitation inv = maitreInvitationService.createOrReuse(id, emailClean);
 			maitreInvitationService.send(inv);
 			return;
 		}
-		
+
 		classroom.setMaitre(profOpt.get());
 		classroomRepository.save(classroom);
 	}
