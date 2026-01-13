@@ -1,6 +1,9 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,13 +16,10 @@ export default defineConfig({
   server: {
     port: 8080,
     proxy: {
-      '/auth':   { target: 'http://localhost:4700', changeOrigin: true },
-      '/schools': { target: 'http://localhost:4700', changeOrigin: true },
-      '/classrooms':{ target: 'http://localhost:4700', changeOrigin: true },
-      '/pupils': { target: 'http://localhost:4700', changeOrigin: true },
-      '/ping':   { target: 'http://localhost:4700', changeOrigin: true },
-      '/whoami': { target: 'http://localhost:4700', changeOrigin: true },
-      '/attendance': { target: 'http://localhost:4700', changeOrigin: true }
-    }
+      '/api': {
+        target: process.env.VITE_API_TARGET,
+      changeOrigin: true,
+      secure: true,},
+    },
   }
 })

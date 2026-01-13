@@ -98,14 +98,15 @@ api.interceptors.response.use(
 
       // 403 : authentifié mais pas les droits
       if (status === 403) {
-        if (!redirecting && router.currentRoute.value.name !== 'forbidden') {
-          redirecting = true
-          router
-            .push({ name: 'forbidden' })
-            .finally(() => {
-              redirecting = false
-            })
-        }
+        console.warn("403 on", url, err.response?.data);
+        // if (!redirecting && router.currentRoute.value.name !== 'forbidden') {
+        //   redirecting = true
+        //   router
+        //     .push({ name: 'forbidden' })
+        //     .finally(() => {
+        //       redirecting = false
+        //     })
+        // }
       }
     }
 

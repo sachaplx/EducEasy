@@ -20,8 +20,7 @@
                 label="Email"
                 type="email"
                 autocomplete="email"
-                :rules="[rules.required, rules.email]"
-                :disabled="loading"
+                disabled
                 variant="outlined"
               />
             </v-col>
@@ -62,20 +61,6 @@
                 :rules="[rules.required, rules.matchPassword]"
                 :disabled="loading"
                 variant="outlined"
-              />
-            </v-col>
-
-            <v-col cols="12">
-              <v-select
-                v-model="form.role"
-                :items="roles"
-                item-title="label"
-                item-value="value"
-                label="Rôle"
-                :rules="[rules.required]"
-                :disabled="loading"
-                variant="outlined"
-                persistent-hint
               />
             </v-col>
 
@@ -123,14 +108,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
+import { ref, reactive, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { api } from "../services/api";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
-const auth = useAuthStore();
+const route = useRoute();
 
+const token = String(route.query.token || "").trim();
 const valid = ref(false);
 const loading = ref(false);
 const error = ref(null);
@@ -169,6 +155,25 @@ const rules = {
     "Les mots de passe ne correspondent pas",
 };
 
+onMounted(async () => {
+  if (!token) {
+    error.value = "Lien d'invitation invalide.";
+    return;
+  }
+  try {
+    loading.value = true;
+    const { data } = await api.get("/auth/invite", {
+      params: { token, _ts: Date.now() },
+    });
+    form.value.email = data?.email || "";
+    form.value.role = "TEACHER";
+  } catch (e) {
+    error.value = "Lien d'invitation invalide ou expiré.";
+  } finally {
+    loading.value = false;
+  }
+});
+
 function goLogin() {
   router.push({ name: "login" });
 }
@@ -201,7 +206,13 @@ async function onSubmit() {
 
   try {
     loading.value = true;
-    const res = await api.post("/auth/register", payload);
+    const res = await api.post("/auth/invite/complete", {
+      token,
+      username: form.value.username.trim(),
+      password: form.value.password,
+      prenom: form.value.firstName.trim(),
+      nom: form.value.lastName.trim(),
+    });
     snackbar(
       res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer."
     );

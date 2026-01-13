@@ -6,12 +6,25 @@ export const usePupilStore = defineStore("pupil", {
     presence: {
       loading: false,
       error: null,
-      rate: null, // number | null
+      rate: null,
       from: null,
       to: null,
       schoolDays: null,
       pupilCount: null,
       absentSlots: null,
+    },
+
+    currentClassroomId: null,
+    pupils: [],
+
+    loading: {
+      pupils: false,
+      addPupil: false,
+    },
+
+    error: {
+      pupils: "",
+      addPupil: "",
     },
   }),
 
@@ -46,5 +59,58 @@ export const usePupilStore = defineStore("pupil", {
         this.presence.loading = false;
       }
     },
-  },
-});
+
+    async fetchPupilsForClassroom(classroomId) {
+      this.currentClassroomId = classroomId || null;
+
+      if (!classroomId) {
+        this.pupils = [];
+        return;
+      }
+
+      if (this.loading.pupils) return;
+
+      this.loading.pupils = true;
+      this.error.pupils = "";
+
+      try {
+        const { data } = await api.get(`/classrooms/${classroomId}/list/pupils`, { params: { _ts: Date.now() } });
+        this.pupils = Array.isArray(data) ? data : [];
+        return this.pupils;  
+      } catch (e) {
+        this.error.pupils = "Impossible de charger les élèves.";
+        this.pupils = [];
+        throw e;
+      } finally {
+        this.loading.pupils = false;
+      }
+    },
+
+    async reloadPupilsForClassroom(classroomId) {
+      return this.fetchPupilsForClassroom(classroomId);
+    },
+
+    async addPupilToClassroom(classroomId, pupilData) {
+      if (!classroomId) throw new Error("Classroom ID manquant.");
+
+      this.loading.addPupil = true;
+      this.error.addPupil = "";
+
+      try {
+        const { data } = await api.post(`/classrooms/${classroomId}/pupils`, pupilData);
+        if (data?.id) {
+          this.pupils.unshift(data);
+        } else {
+          await this.fetchPupilsForClassroom(classroomId);
+        }
+
+        return data;
+      } catch (e) {
+        this.error.addPupil = "Impossible d'ajouter l'élève.";
+        throw e;
+      } finally {
+        this.loading.addPupil = false;
+      }
+    },
+},
+})

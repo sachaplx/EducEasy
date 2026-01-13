@@ -9,7 +9,7 @@ import Forbidden from '../views/Forbidden.vue'
 import ForgotPassword from '../views/ForgotPassword.vue'
 import ResetPassword from '../views/ResetPassword.vue'
 import AccountView from '../views/AccountView.vue'
-
+import InviteSignup from '../views/InviteSignup.vue'
 
 const PupilProfile = () => import('../views/PupilProfile.vue')
 
@@ -24,6 +24,7 @@ const routes = [
   { path: '/forgot-password', name: 'forgot-password', component: ForgotPassword, meta: { guestOnly: true } },
   { path: '/reset-password', name: 'reset-password', component: ResetPassword, meta: { guestOnly: true } },
   { path: '/account', name: 'account', component: AccountView, meta: { requiresAuth: true } },
+  { path: '/invite', name: 'invite', component: InviteSignup, meta: { guestOnly: true } },
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
