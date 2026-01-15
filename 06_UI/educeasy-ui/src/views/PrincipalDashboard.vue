@@ -177,7 +177,7 @@
             :error="pupil.presence.error"
             @refresh="pupil.fetchPresenceRate()"
           />
-          <v-card rounded="xl" class="pa-4">
+          <!-- <v-card rounded="xl" class="pa-4">
             <div class="d-flex align-center justify-space-between mb-2">
               <div class="text-h6 font-weight-bold">Activité récente</div>
               <v-btn
@@ -230,7 +230,7 @@
                 Pensez à valider les absences de la semaine avant vendredi.
               </div>
             </v-card>
-          </v-card>
+          </v-card> -->
         </v-col>
       </v-row>
 
