@@ -44,7 +44,7 @@ pipeline {
       }
     }
 
-    stage('Build Front dist') {
+    stage('Build educeasy-front') {
       steps {
         sh '''
           set -e
@@ -59,7 +59,7 @@ pipeline {
       }
     }
 
-    stage('Copy artifacts to /opt/educeasy') {
+    stage('Copy to /opt/educeasy') {
       steps {
         sh '''
           set -e
@@ -85,7 +85,7 @@ pipeline {
       }
     }
 
-    stage('Build Docker images (VM Dockerfiles)') {
+    stage('Build Docker images') {
       steps {
         sh '''
           set -e
@@ -100,7 +100,7 @@ pipeline {
       }
     }
 
-    stage('Deploy (docker compose)') {
+    stage('Deploy') {
       steps {
         sh '''
           set -e
