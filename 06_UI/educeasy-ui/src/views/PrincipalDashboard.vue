@@ -127,7 +127,7 @@
             </div>
           </v-card>
 
-          <!-- Actions rapides -->
+          <!-- Actions rapides 
           <div class="mt-6">
             <div class="text-h6 font-weight-bold mb-3">Actions rapides</div>
             <v-row dense>
@@ -164,7 +164,7 @@
                 />
               </v-col>
             </v-row>
-          </div>
+          </div> -->
         </v-col>
 
         <!-- Right: Recent activity -->
