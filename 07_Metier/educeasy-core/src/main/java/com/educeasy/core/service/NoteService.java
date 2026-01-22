@@ -5,9 +5,11 @@ import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.educeasy.core.dto.EntryDTO.CreateNoteRequest;
 import com.educeasy.core.dto.NoteInfo;
@@ -49,10 +51,10 @@ public class NoteService {
 			throw new AccessDeniedException("Unauthorized role");
 		}
 		if (req.note() == null || req.note().compareTo(BigDecimal.ZERO) < 0 || req.note().compareTo(BigDecimal.TEN.add(BigDecimal.TEN)) > 0) {
-			throw new IllegalArgumentException("Note must be between 0 and 20");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Note must be between 0 and 20");
 		}
 		if (req.matiere() == null || req.matiere().isBlank()) {
-			throw new IllegalArgumentException("Course is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course is required");
 		}
 
 		var pupil = pupilRepository.findById(pupilId).orElseThrow();
@@ -106,7 +108,7 @@ public class NoteService {
 		if (Role.PRINCIPAL.equals(user.getRole())) {
 			return true;
 		}
-		
+
 		if (Role.TEACHER.equals(user.getRole())) {
 			return inscriptionRepository.existsActiveForTeacher(pupilId, user.getId());
 		}

@@ -5,9 +5,11 @@ import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.educeasy.core.dto.EntryDTO.CreateRemarkRequest;
 import com.educeasy.core.dto.RemarqueInfo;
@@ -62,9 +64,9 @@ public class RemarqueService {
 		}
 
 		if (req.type() == null)
-			throw new IllegalArgumentException("Required type");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le type est requis.");
 		if (req.contenu() == null || req.contenu().isBlank())
-			throw new IllegalArgumentException("Required content");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le contenu est requis.");
 
 		var pupil = pupilRepository.findById(pupilId).orElseThrow();
 
@@ -78,24 +80,22 @@ public class RemarqueService {
 		var saved = remarqueRepository.save(r);
 		return toDTO(saved);
 	}
-	
+
 	@Transactional
 	public void deleteRemarque(Long pupilId, Long remarqueId, Authentication auth) throws Exception {
-	    var user = userRepository.findByUsernameIgnoreCase(auth.getName())
-	        .orElseThrow(() -> new AccessDeniedException("Utilisateur not found"));
+		var user = userRepository.findByUsernameIgnoreCase(auth.getName()).orElseThrow(() -> new AccessDeniedException("Utilisateur not found"));
 
-	    var remarque = remarqueRepository.findById(remarqueId)
-	        .orElseThrow(() -> new IllegalArgumentException("Remarqk not found"));
+		var remarque = remarqueRepository.findById(remarqueId).orElseThrow(() -> new IllegalArgumentException("Remarqk not found"));
 
-	    if (remarque.getPupil() == null || !remarque.getPupil().getId().equals(pupilId)) {
-	        throw new AccessDeniedException("This remark doesn't match the pupil");
-	    }
+		if (remarque.getPupil() == null || !remarque.getPupil().getId().equals(pupilId)) {
+			throw new AccessDeniedException("This remark doesn't match the pupil");
+		}
 
-	    if (!canManageEntry(user, pupilId)) {
-	        throw new AccessDeniedException("You cannot manage this remark");
-	    }
+		if (!canManageEntry(user, pupilId)) {
+			throw new AccessDeniedException("You cannot manage this remark");
+		}
 
-	    remarqueRepository.delete(remarque);
+		remarqueRepository.delete(remarque);
 	}
 
 	private RemarqueInfo toDTO(Remarque r) {
@@ -123,19 +123,19 @@ public class RemarqueService {
 		}
 		return dto;
 	}
-	
+
 	private boolean canManageEntry(User user, Long pupilId) {
 		if (Role.PRINCIPAL.equals(user.getRole())) {
 			return true;
 		}
-		
+
 		if (Role.TEACHER.equals(user.getRole())) {
 			return inscriptionRepository.existsActiveForTeacher(pupilId, user.getId());
 		}
 
 		return false;
 	}
-	
+
 	public RemarqueService(RemarqueRepository remarqueRepository, PupilRepository pupilRepository, InscriptionRepository inscriptionRepository, UserRepository userRepository, ProfessorRepository professorRepository, PrincipalRepository principalRepository) {
 		this.remarqueRepository = remarqueRepository;
 		this.pupilRepository = pupilRepository;

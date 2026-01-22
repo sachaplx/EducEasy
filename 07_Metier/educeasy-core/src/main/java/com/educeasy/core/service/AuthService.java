@@ -97,22 +97,22 @@ public class AuthService {
 		String username = req.username().trim();
 
 		if (userRepository.existsByEmailIgnoreCase(email)) {
-			throw new IllegalArgumentException("Email already exists");
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Cet e-mail est déjà attribué.");
 		}
 
 		if (userRepository.existsByUsernameIgnoreCase(username)) {
-			throw new IllegalArgumentException("Username already exists");
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce nom d'utilisateur existe déjà");
 		}
 
 		Role role;
 		try {
 			role = Role.valueOf(req.role().trim().toUpperCase());
 		} catch (Exception e) {
-			throw new IllegalArgumentException("Invalid role");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle invalide");
 		}
 
 		if (req.firstName() == null || req.firstName().isBlank() || req.lastName() == null || req.lastName().isBlank()) {
-			throw new IllegalArgumentException("FirstName and LastName are required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nom et prénom doivent être remplis");
 		}
 
 		User u = new User();
