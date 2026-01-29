@@ -41,6 +41,7 @@ public class NoteService {
 			if (!ok) {
 				throw new AccessDeniedException("You don't have permission to update this pupil.");
 			}
+			break;
 		case PRINCIPAL:
 			boolean stillOk = inscriptionRepository.existsActiveForPrincipal(pupilId, user.getId());
 			if (!stillOk) {
