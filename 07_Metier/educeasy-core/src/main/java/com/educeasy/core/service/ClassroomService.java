@@ -180,9 +180,13 @@ public class ClassroomService {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès interdit.");
 		}
 
-		School school = schoolRepository.findByPrincipalUserId(me.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "École introuvable pour ce principal"));
+		List<Long> schoolIds = schoolRepository.findByPrincipalUserId(me.getId()).stream().map(School::getId).toList();
 
-		return getClassroomsforSchool(school.getId());
+		if (schoolIds.isEmpty()) {
+			return List.of();
+		}
+
+		return classroomRepository.findBySchoolIdIn(schoolIds).stream().map(this::toDTO).toList();
 	}
 
 	@Transactional
