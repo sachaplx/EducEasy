@@ -53,6 +53,7 @@ public class RemarqueService {
 			if (!ok) {
 				throw new AccessDeniedException("You cannot update this pupil");
 			}
+			break;
 		case PRINCIPAL:
 			boolean stillOk = inscriptionRepository.existsActiveForPrincipal(pupilId, user.getId());
 			if (!stillOk) {
