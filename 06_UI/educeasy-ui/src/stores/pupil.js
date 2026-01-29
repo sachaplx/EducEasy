@@ -16,6 +16,7 @@ export const usePupilStore = defineStore("pupil", {
 
     currentClassroomId: null,
     pupils: [],
+    pupilCountByClassroom: {}, // Cache: { classroomId: count }
 
     loading: {
       pupils: false,
@@ -76,6 +77,11 @@ export const usePupilStore = defineStore("pupil", {
       try {
         const { data } = await api.get(`/classrooms/${classroomId}/list/pupils`, { params: { _ts: Date.now() } });
         this.pupils = Array.isArray(data) ? data : [];
+        // Cache the count - create a new object to trigger reactivity
+        this.pupilCountByClassroom = {
+          ...this.pupilCountByClassroom,
+          [classroomId]: this.pupils.length
+        };
         return this.pupils;  
       } catch (e) {
         this.error.pupils = "Impossible de charger les élèves.";
@@ -100,6 +106,13 @@ export const usePupilStore = defineStore("pupil", {
         const { data } = await api.post(`/classrooms/${classroomId}/pupils`, pupilData);
         if (data?.id) {
           this.pupils.unshift(data);
+          // Update cache - create new object for reactivity
+          if (this.pupilCountByClassroom[classroomId] !== undefined) {
+            this.pupilCountByClassroom = {
+              ...this.pupilCountByClassroom,
+              [classroomId]: this.pupilCountByClassroom[classroomId] + 1
+            };
+          }
         } else {
           await this.fetchPupilsForClassroom(classroomId);
         }
@@ -112,5 +125,28 @@ export const usePupilStore = defineStore("pupil", {
         this.loading.addPupil = false;
       }
     },
-},
+
+    async fetchCountsForClassrooms(classroomIds) {
+      if (!Array.isArray(classroomIds) || !classroomIds.length) return;
+      
+      const newCounts = { ...this.pupilCountByClassroom };
+      
+      // Fetch counts in parallel for all classrooms
+      const promises = classroomIds.map(async (id) => {
+        try {
+          const { data } = await api.get(`/classrooms/${id}/list/pupils`);
+          const count = Array.isArray(data) ? data.length : 0;
+          newCounts[id] = count;
+        } catch (e) {
+          // Silently fail for individual classrooms
+          console.warn(`Failed to fetch count for classroom ${id}`, e);
+        }
+      });
+
+      await Promise.allSettled(promises);
+      
+      // Update store with new object to trigger reactivity
+      this.pupilCountByClassroom = newCounts;
+    },
+  },
 })

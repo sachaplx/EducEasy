@@ -31,6 +31,20 @@ export function decodeJwtRoles(token) {
   return []
 }
 
+export function getApiErrorMessage(err, fallback = "Une erreur est survenue") {
+    const data = err?.response?.data;
+  if (typeof data === "string" && data.trim()) return data;
+
+  return (
+    data?.message ||
+    data?.error ||
+    data?.detail ||
+    data?.title ||
+    err?.message ||
+    fallback
+  );
+}
+
 function isJwtExpired(token) {
   const p = decodeJwt(token)
   const now = Math.floor(Date.now() / 1000)

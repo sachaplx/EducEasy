@@ -125,5 +125,23 @@ export const useSchoolStore = defineStore("school", {
             this.loading.setMaitre = false;
         }
     },
+
+    async fetchMyClassrooms() {
+        if (this.loading.classrooms) return;
+        this.loading.classrooms = true;
+        this.error.classrooms = "";
+        try {
+            const { data } = await api.get("/classrooms/mine", { params: { _ts: Date.now() } });
+            this.classrooms = Array.isArray(data) ? data : [];
+            return this.classrooms;
+        } catch (e) {
+            console.warn("API /classrooms/mine non disponible:", e);
+            this.classrooms = [];
+            this.error.classrooms = "";
+            return [];
+        } finally {
+            this.loading.classrooms = false;
+        }
+    },
 }
 });

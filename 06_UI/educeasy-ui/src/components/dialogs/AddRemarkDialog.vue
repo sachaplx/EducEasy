@@ -46,7 +46,7 @@ const emit = defineEmits(["update:modelValue", "saved"]);
 const open = ref(props.modelValue);
 watch(
   () => props.modelValue,
-  (v) => (open.value = v)
+  (v) => (open.value = v),
 );
 watch(open, (v) => emit("update:modelValue", v));
 
@@ -76,6 +76,14 @@ function close() {
   open.value = false;
 }
 
+function resetForm() {
+  formData.value = {
+    type: "INFO",
+    contenu: "",
+  };
+  form.value?.reset();
+}
+
 async function submit() {
   const ok = await form.value?.validate();
   if (!ok?.valid) return;
@@ -83,7 +91,10 @@ async function submit() {
   try {
     await api.post(`/pupils/${props.pupilId}/remarks/add`, formData.value);
     emit("saved");
+    resetForm();
     close();
+  } catch (error) {
+    console.error("Error adding remark:", error);
   } finally {
     loading.value = false;
   }

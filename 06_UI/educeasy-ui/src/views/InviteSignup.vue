@@ -101,9 +101,6 @@
         </v-form>
       </v-card-text>
     </v-card>
-    <v-snackbar v-model="toast.show" :color="toast.color" timeout="2500">
-      {{ toast.text }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -112,9 +109,12 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "../services/api";
 import { useAuthStore } from "../stores/auth";
+import { useToastStore } from "../stores/toast";
 
 const router = useRouter();
 const route = useRoute();
+const auth = useAuthStore();
+const toast = useToastStore();
 
 const token = String(route.query.token || "").trim();
 const valid = ref(false);
@@ -123,12 +123,6 @@ const error = ref(null);
 const formRef = ref(null);
 const showPassword = ref(false);
 const showPassword2 = ref(false);
-
-const toast = reactive({
-  show: false,
-  text: "",
-  color: "success",
-});
 
 const roles = [
   { label: "Directeur", value: "PRINCIPAL" },
@@ -178,12 +172,6 @@ function goLogin() {
   router.push({ name: "login" });
 }
 
-function snackbar(text, color = "success") {
-  toast.text = text;
-  toast.color = color;
-  toast.show = true;
-}
-
 async function onSubmit() {
   error.value = null;
   const ok = await formRef.value?.validate();
@@ -213,8 +201,8 @@ async function onSubmit() {
       prenom: form.value.firstName.trim(),
       nom: form.value.lastName.trim(),
     });
-    snackbar(
-      res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer."
+    toast.success(
+      res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer.",
     );
     localStorage.setItem("prefillEmail", form.value.email);
     router.push({ name: "login" });

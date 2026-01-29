@@ -103,7 +103,7 @@
             <v-btn
               :loading="loading"
               :disabled="loading || !valid"
-              color="primary"
+              class="reg-button"
               type="submit"
             >
               Créer mon compte
@@ -116,20 +116,19 @@
         </v-form>
       </v-card-text>
     </v-card>
-    <v-snackbar v-model="toast.show" :color="toast.color" timeout="2500">
-      {{ toast.text }}
-    </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
-import { api } from "../services/api";
+import { api, getApiErrorMessage } from "../services/api";
 import { useAuthStore } from "../stores/auth";
+import { useToastStore } from "../stores/toast";
 
 const router = useRouter();
 const auth = useAuthStore();
+const toast = useToastStore();
 
 const valid = ref(false);
 const loading = ref(false);
@@ -137,12 +136,6 @@ const error = ref(null);
 const formRef = ref(null);
 const showPassword = ref(false);
 const showPassword2 = ref(false);
-
-const toast = reactive({
-  show: false,
-  text: "",
-  color: "success",
-});
 
 const roles = [
   { label: "Directeur", value: "PRINCIPAL" },
@@ -173,12 +166,6 @@ function goLogin() {
   router.push({ name: "login" });
 }
 
-function snackbar(text, color = "success") {
-  toast.text = text;
-  toast.color = color;
-  toast.show = true;
-}
-
 async function onSubmit() {
   error.value = null;
   const ok = await formRef.value?.validate();
@@ -202,18 +189,25 @@ async function onSubmit() {
   try {
     loading.value = true;
     const res = await api.post("/auth/register", payload);
-    snackbar(
-      res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer."
+    toast.success(
+      res.data?.message ?? "Compte créé. Vérifiez vos e-mails pour l'activer.",
     );
     localStorage.setItem("prefillEmail", form.value.email);
     router.push({ name: "login" });
   } catch (e) {
-    const msg =
-      e?.response?.data?.message || e?.response?.data?.error || e?.message;
-    if (typeof msg === "string") error.value = msg;
-    else error.value = "Inscription impossible. Vérifiez les champs.";
+    error.value = getApiErrorMessage(
+      e,
+      "Inscription impossible. Vérifiez vos informations.",
+    );
   } finally {
     loading.value = false;
   }
 }
 </script>
+
+<style scoped>
+.reg-button {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+  color: white !important;
+}
+</style>

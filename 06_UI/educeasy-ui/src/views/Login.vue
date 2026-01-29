@@ -47,7 +47,7 @@
           </div>
           <v-btn
             type="submit"
-            color="primary"
+            class="log-button"
             :loading="loading"
             :disabled="loading"
             block
@@ -111,6 +111,10 @@ onMounted(() => {
     infoMessage.value =
       "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.";
   }
+  if (route.query.register === "ok") {
+    infoMessage.value =
+      "Votre compte a été créé avec succès. Veuillez vérifier votre e-mail pour confirmer votre adresse avant de vous connecter.";
+  }
 });
 
 function onRegister() {
@@ -160,21 +164,18 @@ function onForgotPassword() {
 <style scoped>
 @media (min-width: 960px) {
   .login-view {
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 }
 
 .no-grow-details :deep(.v-input__details) {
   min-height: 22px;
 }
-</style>
 
-<style>
-@media (min-width: 960px) {
-  html,
-  body {
-    overflow: hidden;
-  }
+.log-button {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+  color: white !important;
 }
 </style>

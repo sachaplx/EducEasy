@@ -28,7 +28,7 @@
 
       <!-- Info -->
       <div class="cc__info">
-        <div class="cc__teacherRow">
+        <div v-if="teacherName" class="cc__teacherRow">
           <v-avatar size="32" class="cc__avatar">
             <div class="cc__avatarFallback" :class="variant.badge">
               {{ teacherInitials }}
@@ -44,14 +44,9 @@
         <div class="cc__footer">
           <div class="cc__stat">
             <v-icon size="16" class="cc__statIcon">mdi-account-multiple</v-icon>
-            <span>{{ studentCount }} élèves</span>
-          </div>
-
-          <div class="cc__stat">
-            <v-icon size="16" class="cc__statIcon"
-              >mdi-book-open-variant</v-icon
+            <span
+              >{{ studentCount }} élève{{ studentCount > 1 ? "s" : "" }}</span
             >
-            <span>{{ courseCount }} cours</span>
           </div>
         </div>
       </div>
@@ -65,8 +60,8 @@ import { computed } from "vue";
 const props = defineProps({
   name: { type: String, required: true },
   level: { type: String, required: true },
-  teacherName: { type: String, required: true },
-  teacherInitials: { type: String, required: true },
+  teacherName: { type: String, default: "" },
+  teacherInitials: { type: String, default: "" },
   studentCount: { type: Number, default: 0 },
   courseCount: { type: Number, default: 12 },
 
@@ -129,7 +124,9 @@ const variant = computed(() => {
   backdrop-filter: blur(6px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06); /* shadow-card */
   cursor: pointer;
-  transition: transform 300ms ease, box-shadow 300ms ease,
+  transition:
+    transform 300ms ease,
+    box-shadow 300ms ease,
     border-color 300ms ease;
 }
 
@@ -197,7 +194,9 @@ const variant = computed(() => {
 .cc__chevron {
   opacity: 0;
   transform: translateX(-8px);
-  transition: opacity 300ms ease, transform 300ms ease;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
   color: rgba(0, 0, 0, 0.5);
 }
 

@@ -28,10 +28,7 @@
                 </div>
               </div>
 
-              <div
-                class="d-flex align-center"
-                style="gap: 8px; min-width: 320px"
-              >
+              <div class="d-flex align-center flex-wrap" style="gap: 8px">
                 <v-select
                   v-model="selectedEcoleId"
                   :items="ecoles"
@@ -42,36 +39,50 @@
                   density="comfortable"
                   hide-details
                   :loading="school.loading.schools"
-                />
-                <v-tooltip text="Nouvelle école" location="top">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      variant="text"
-                      :loading="loadingCreate.school"
-                      @click="openCreateSchool"
-                      aria-label="Nouvelle école"
-                    >
-                      <v-icon>mdi-school</v-icon>
-                    </v-btn>
+                  style="min-width: 280px; flex: 1 1 auto"
+                >
+                  <template #no-data>
+                    <div class="text-center pa-4 text-medium-emphasis">
+                      Aucune école disponible
+                    </div>
                   </template>
-                </v-tooltip>
-                <v-tooltip text="Actualiser" location="top">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      variant="text"
-                      :loading="school.loading.classrooms"
-                      :disabled="!selectedEcoleId"
-                      @click="loadClasses"
-                      aria-label="Actualiser"
-                    >
-                      <v-icon>mdi-refresh</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
+                </v-select>
+
+                <div
+                  class="d-flex align-center"
+                  style="gap: 8px; margin-left: auto"
+                >
+                  <v-tooltip text="Créer une nouvelle école" location="top">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        type="submit"
+                        class="button"
+                        :loading="loadingCreate.school"
+                        @click="openCreateSchool"
+                        aria-label="Créer une nouvelle école"
+                        prepend-icon="mdi-school"
+                      >
+                        Nouvelle école
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip text="Actualiser" location="top">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        icon
+                        variant="text"
+                        :loading="school.loading.classrooms"
+                        :disabled="!selectedEcoleId"
+                        @click="loadClasses"
+                        aria-label="Actualiser"
+                      >
+                        <v-icon>mdi-refresh</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                </div>
               </div>
             </div>
 
@@ -94,12 +105,39 @@
                 <div class="text-medium-emphasis py-6">
                   Aucune classe pour cette école.
                 </div>
+                <v-btn
+                  class="button mt-4"
+                  variant="text"
+                  block
+                  @click="openCreateClass"
+                  prepend-icon="mdi-google-classroom"
+                  >Nouvelle classe</v-btn
+                >
               </template>
 
               <template v-else>
-                <div class="class-grid">
+                <v-text-field
+                  v-model="classQuery"
+                  label="Rechercher une classe"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  prepend-inner-icon="mdi-magnify"
+                  clearable
+                  class="mb-4"
+                  placeholder="Nom, enseignant, cycle..."
+                />
+
+                <div
+                  v-if="!classesFiltered.length"
+                  class="text-medium-emphasis py-6 text-center"
+                >
+                  Aucune classe ne correspond à votre recherche.
+                </div>
+
+                <div v-else class="class-grid">
                   <ClassCards
-                    v-for="c in classes"
+                    v-for="c in classesFiltered"
                     :key="c.id"
                     :name="classLabel(c)"
                     :level="cycleLabel(c)"
@@ -113,16 +151,14 @@
                     @click="openClass(c)"
                   />
                 </div>
-
                 <v-btn
-                  class="mt-4 dashed-btn"
+                  class="button mt-4"
                   variant="text"
                   block
-                  prepend-icon="mdi-chevron-down"
-                  @click="goToAllClasses"
+                  @click="openCreateClass"
+                  prepend-icon="mdi-google-classroom"
+                  >Nouvelle classe</v-btn
                 >
-                  Voir toutes les classes
-                </v-btn>
               </template>
             </div>
           </v-card>
@@ -237,17 +273,36 @@
       <!-- Dialog: pupils in class -->
       <v-dialog v-model="pupilsDialog" max-width="720">
         <v-card rounded="xl">
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div class="d-flex flex-column">
-              <span class="text-h6 font-weight-bold">{{
-                classLabel(activeClass)
-              }}</span>
-              <span class="text-body-2 text-medium-emphasis">
+          <v-card-title
+            class="d-flex align-center"
+            style="gap: 8px; flex-wrap: nowrap"
+          >
+            <div
+              class="d-flex flex-column"
+              style="flex: 1; min-width: 0; overflow: hidden"
+            >
+              <span
+                class="text-h6 font-weight-bold"
+                style="
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                "
+                >{{ classLabel(activeClass) }}</span
+              >
+              <span
+                class="text-body-2 text-medium-emphasis"
+                style="
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                "
+              >
                 {{ teacherLabel(activeClass) }}
               </span>
             </div>
 
-            <div class="d-flex align-center" style="gap: 6px">
+            <div class="d-flex align-center" style="gap: 6px; flex-shrink: 0">
               <v-btn
                 icon
                 variant="text"
@@ -341,15 +396,37 @@
                 </v-list-item-subtitle>
 
                 <template #append>
-                  <v-btn
-                    icon
-                    size="small"
-                    variant="text"
-                    @click.stop="goToPupil(p)"
-                    aria-label="Ouvrir profil"
-                  >
-                    <v-icon>mdi-open-in-new</v-icon>
-                  </v-btn>
+                  <div class="d-flex align-center" style="gap: 4px">
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      @click.stop="handleQuickNote(p)"
+                      aria-label="Ajouter une note"
+                    >
+                      <v-icon size="20">mdi-note-plus-outline</v-icon>
+                    </v-btn>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      color="warning"
+                      @click.stop="handleQuickAbsence(p)"
+                      aria-label="Marquer absent"
+                    >
+                      <v-icon size="20">mdi-account-off-outline</v-icon>
+                    </v-btn>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      @click.stop="goToPupil(p)"
+                      aria-label="Ouvrir profil"
+                    >
+                      <v-icon>mdi-open-in-new</v-icon>
+                    </v-btn>
+                  </div>
                 </template>
               </v-list-item>
             </v-list>
@@ -410,10 +487,33 @@
         :classroom-id="activeClassId"
         @submit="handleSetMaitre"
       />
+
+      <!-- Quick Actions Dialogs -->
+      <AddNoteDialog
+        v-if="selectedPupil"
+        v-model="quickNoteDialog"
+        :pupil-id="selectedPupil.id"
+        @saved="refreshPupils"
+      />
+
+      <QuickAbsenceDialog
+        v-if="selectedPupil"
+        v-model="quickAbsenceDialog"
+        :pupils="[selectedPupil]"
+        @saved="refreshPupils"
+      />
+
+      <!-- Confirmation Dialog -->
+      <ConfirmDialog
+        v-model="confirmDialog.show"
+        :title="confirmDialog.title"
+        :message="confirmDialog.message"
+        :type="confirmDialog.type"
+        :loading="confirmDialog.loading"
+        @confirm="handleConfirmAction"
+        @cancel="handleCancelConfirm"
+      />
     </div>
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
-      {{ snackbar.text }}
-    </v-snackbar>
   </v-container>
 </template>
 
@@ -430,6 +530,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { usePupilStore } from "../stores/pupil";
 import { useSchoolStore } from "../stores/school";
+import { useToastStore } from "../stores/toast";
 import KpiCard from "../components/dashboard/KpiCards.vue";
 import QuickAction from "../components/dashboard/QuickActions.vue";
 import ClassCards from "../components/dashboard/ClassCards.vue";
@@ -438,6 +539,9 @@ import CreateSchoolDialog from "../components/dialogs/CreateSchoolDialog.vue";
 import CreateClassroomDialog from "../components/dialogs/CreateClassroomDialog.vue";
 import SetMaitreDialog from "../components/dialogs/SetMaitreDialog.vue";
 import AddPupilDialog from "../components/dialogs/AddPupilDialog.vue";
+import AddNoteDialog from "../components/dialogs/AddNoteDialog.vue";
+import QuickAbsenceDialog from "../components/dialogs/QuickAbsenceDialog.vue";
+import ConfirmDialog from "../components/dialogs/ConfirmDialog.vue";
 
 /* -----------------------------
   State
@@ -446,9 +550,20 @@ const router = useRouter();
 const auth = useAuthStore();
 const pupil = usePupilStore();
 const school = useSchoolStore();
+const toast = useToastStore();
 
 const confirmReplaceMaitre = ref(false);
 const pendingMaitreEmail = ref("");
+
+const confirmDialog = ref({
+  show: false,
+  loading: false,
+  type: "default",
+  title: "",
+  message: "",
+  action: null,
+  data: null,
+});
 
 const error = ref("");
 
@@ -466,6 +581,9 @@ const createSchoolDialog = ref(false);
 const createClassDialog = ref(false);
 const setMaitreDialog = ref(false);
 const addPupilDialog = ref(false);
+const quickNoteDialog = ref(false);
+const quickAbsenceDialog = ref(false);
+const selectedPupil = ref(null);
 
 const loadingCreate = reactive({
   school: false,
@@ -477,6 +595,7 @@ const loadingCreate = reactive({
 const pupilsDialog = ref(false);
 const activeClassId = ref(null);
 const pupilQuery = ref("");
+const classQuery = ref("");
 
 function defaultSchoolYear() {
   const now = new Date();
@@ -489,7 +608,7 @@ function defaultSchoolYear() {
   Computed
 ------------------------------ */
 const displayName = computed(
-  () => auth.me?.firstName || auth.me?.lastName || auth.username || ""
+  () => auth.me?.firstName || auth.me?.lastName || auth.username || "",
 );
 
 const ecoles = computed(() => school.schools);
@@ -507,10 +626,22 @@ const presenceRateDisplay = computed(() => {
 const activeClass = computed(
   () =>
     classes.value.find((c) => String(c.id) === String(activeClassId.value)) ||
-    null
+    null,
 );
 
 const activeState = computed(() => state(activeClassId.value));
+
+const classesFiltered = computed(() => {
+  const list = classes.value || [];
+  const q = (classQuery.value || "").trim().toLowerCase();
+  if (!q) return list;
+  return list.filter((c) => {
+    const name = classLabel(c).toLowerCase();
+    const teacher = teacherLabel(c).toLowerCase();
+    const cycle = cycleLabel(c).toLowerCase();
+    return name.includes(q) || teacher.includes(q) || cycle.includes(q);
+  });
+});
 
 const pupilsFiltered = computed(() => {
   const list = pupil.pupils || [];
@@ -529,18 +660,6 @@ const mustCreateSchool = computed(() => {
     (school.schools?.length ?? 0) === 0;
 });
 
-const snackbar = reactive({
-  show: false,
-  text: "",
-  color: "success",
-});
-
-function notify(text, color = "success") {
-  snackbar.text = text;
-  snackbar.color = color;
-  snackbar.show = true;
-}
-
 const kpis = computed(() => {
   // NOTE: présence & deltas = placeholders (à brancher)
   const totalClasses = classes.value.length || 0;
@@ -549,9 +668,9 @@ const kpis = computed(() => {
   const teachers = new Set(
     classes.value
       .map((c) =>
-        `${c.teacherFirstName || ""}|${c.teacherLastName || ""}`.trim()
+        `${c.teacherFirstName || ""}|${c.teacherLastName || ""}`.trim(),
       )
-      .filter((x) => x !== "|")
+      .filter((x) => x !== "|"),
   );
 
   // total élèves: si une classe a un count natif, on le prend, sinon on prend cache chargé, sinon 0
@@ -579,7 +698,12 @@ watch(
   async (id, prev) => {
     if (!id || id === prev) return;
     await school.fetchClassesForSelectedSchool();
-  }
+    // Preload pupil counts for all classrooms
+    if (classes.value.length) {
+      const classroomIds = classes.value.map((c) => c.id).filter(Boolean);
+      await pupil.fetchCountsForClassrooms(classroomIds);
+    }
+  },
 );
 
 watch(
@@ -589,7 +713,7 @@ watch(
       createSchoolDialog.value = true;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -598,41 +722,62 @@ watch(
     if (!pupilsDialog.value) return;
     if (!id) return;
     await pupil.fetchPupilsForClassroom(id);
-  }
+  },
 );
 
-async function handleCreateSchool(form) {
+function handleCreateSchool(form) {
+  confirmDialog.value = {
+    show: true,
+    loading: false,
+    type: "info",
+    title: "Créer une nouvelle école",
+    message: `Confirmez-vous la création de l'école "${form.nom || "sans nom"}" ?`,
+    action: "createSchool",
+    data: form,
+  };
+}
+
+async function executeCreateSchool(form) {
   loadingCreate.school = true;
+  confirmDialog.value.loading = true;
   try {
     await school.createSchool(form);
     createSchoolDialog.value = false;
-    notify("École créée.");
-    if (created?.id) {
-      createSchoolDialog.value = false;
-    }
+    confirmDialog.value.show = false;
+    toast.success("École créée.");
   } catch (e) {
-    notify(
-      extractApiError(e, "Erreur lors de la création de l'école."),
-      "error"
-    );
+    toast.error(extractApiError(e, "Erreur lors de la création de l'école."));
   } finally {
     loadingCreate.school = false;
+    confirmDialog.value.loading = false;
   }
 }
 
-async function handleCreateClassroom(form) {
+function handleCreateClassroom(form) {
+  confirmDialog.value = {
+    show: true,
+    loading: false,
+    type: "info",
+    title: "Créer une nouvelle classe",
+    message: `Confirmez-vous la création de la classe "${form.nom || "sans nom"}" pour l'année ${form.anneeScolaire || ""} ?`,
+    action: "createClassroom",
+    data: form,
+  };
+}
+
+async function executeCreateClassroom(form) {
   loadingCreate.classroom = true;
+  confirmDialog.value.loading = true;
   try {
     await school.createClassroom(form);
     createClassDialog.value = false;
-    notify("Classe créée.");
+    confirmDialog.value.show = false;
+    toast.success("Classe créée.");
   } catch (e) {
-    notify(
-      extractApiError(e, "Erreur lors de la création de la classe."),
-      "error"
-    );
+    toast.error(extractApiError(e, "Erreur lors de la création de la classe."));
   } finally {
     loadingCreate.classroom = false;
+    confirmDialog.value.loading = false;
   }
 }
 
@@ -650,12 +795,9 @@ async function doSetMaitre(email) {
   try {
     await school.setMaitre(activeClassId.value, email);
     setMaitreDialog.value = false;
-    notify("Maître défini pour la classe.");
+    toast.success("Maître défini pour la classe.");
   } catch (e) {
-    notify(
-      extractApiError(e, "Erreur lors de la définition du maître."),
-      "error"
-    );
+    toast.error(extractApiError(e, "Erreur lors de la définition du maître."));
   } finally {
     loadingCreate.maitre = false;
   }
@@ -672,20 +814,68 @@ async function refreshPupils() {
   await pupil.reloadPupilsForClassroom(activeClassId.value);
 }
 
-async function handleAddPupil(form) {
+async function loadClasses() {
+  if (!selectedEcoleId.value) return;
+  await school.fetchClassesForSelectedSchool();
+}
+
+function handleAddPupil(form) {
+  if (!school.activeClassId) return;
+
+  const pupilName =
+    `${form.prenom || ""} ${form.nom || ""}`.trim() || "cet élève";
+  confirmDialog.value = {
+    show: true,
+    loading: false,
+    type: "info",
+    title: "Ajouter un élève",
+    message: `Confirmez-vous l'ajout de ${pupilName} à la classe ?`,
+    action: "addPupil",
+    data: form,
+  };
+}
+
+async function executeAddPupil(form) {
   if (!school.activeClassId) return;
 
   loadingCreate.pupil = true;
+  confirmDialog.value.loading = true;
   try {
     await pupil.addPupilToClassroom(activeClassId.value, form);
     addPupilDialog.value = false;
-    notify("Élève ajouté à la classe.");
+    confirmDialog.value.show = false;
+    toast.success("Élève ajouté à la classe.");
     await pupil.reloadPupilsForClassroom(activeClassId.value);
   } catch (e) {
-    notify(extractApiError(e, "Erreur lors de l'ajout de l'élève."), "error");
+    toast.error(extractApiError(e, "Erreur lors de l'ajout de l'élève."));
   } finally {
     loadingCreate.pupil = false;
+    confirmDialog.value.loading = false;
   }
+}
+
+async function handleConfirmAction() {
+  const { action, data } = confirmDialog.value;
+
+  switch (action) {
+    case "createSchool":
+      await executeCreateSchool(data);
+      break;
+    case "createClassroom":
+      await executeCreateClassroom(data);
+      break;
+    case "addPupil":
+      await executeAddPupil(data);
+      break;
+    default:
+      confirmDialog.value.show = false;
+  }
+}
+
+function handleCancelConfirm() {
+  confirmDialog.value.show = false;
+  confirmDialog.value.action = null;
+  confirmDialog.value.data = null;
 }
 
 /* -----------------------------
@@ -705,10 +895,7 @@ function openCreateSchool() {
 
 function openCreateClass() {
   if (!school.selectedEcoleId) {
-    notify(
-      "Veuillez sélectionner une école avant de créer une classe.",
-      "warning"
-    );
+    toast.warning("Veuillez sélectionner une école avant de créer une classe.");
     return;
   }
   createClassDialog.value = true;
@@ -717,6 +904,16 @@ function openCreateClass() {
 function openAddPupil() {
   if (!activeClassId.value) return;
   addPupilDialog.value = true;
+}
+
+function handleQuickNote(p) {
+  selectedPupil.value = p;
+  quickNoteDialog.value = true;
+}
+
+function handleQuickAbsence(p) {
+  selectedPupil.value = p;
+  quickAbsenceDialog.value = true;
 }
 
 function openSetMaitre() {
@@ -751,11 +948,8 @@ function goToAllClasses() {
   // En attendant, on ne fait rien.
 }
 
-function goToActivity() {
-  // TODO: route activité
-}
+function goToActivity() {}
 
-/* Actions rapides (routes à adapter) */
 function actionAddPupil() {
   // router.push({ name: "pupil-create" })
 }
@@ -831,6 +1025,11 @@ function pupilsCount(c) {
   const direct = c?.pupilsCount ?? c?.pupilCount ?? c?.nbEleves;
   if (typeof direct === "number") return direct;
 
+  // Check cached count from store
+  const cached = pupil.pupilCountByClassroom?.[c?.id];
+  if (typeof cached === "number") return cached;
+
+  // If currently active and pupils loaded
   if (String(c?.id) === String(activeClassId.value)) {
     return Array.isArray(pupil.pupils) ? pupil.pupils.length : 0;
   }
@@ -881,7 +1080,9 @@ const recentActivity = ref([
 .class-card {
   border-left: 4px solid;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 .class-card:hover {
   transform: translateY(-1px);
@@ -895,7 +1096,9 @@ const recentActivity = ref([
 
 .quick-action {
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 .quick-action:hover {
   transform: translateY(-1px);
@@ -915,5 +1118,10 @@ const recentActivity = ref([
 .dashboard__inner {
   max-width: 1280px;
   margin: 0 auto;
+}
+
+.button {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+  color: white !important;
 }
 </style>

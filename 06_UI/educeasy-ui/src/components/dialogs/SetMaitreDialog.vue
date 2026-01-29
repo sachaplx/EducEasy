@@ -1,9 +1,27 @@
 <template>
   <v-dialog v-model="open" max-width="560">
     <v-card rounded="xl">
-      <v-card-title class="d-flex align-center justify-space-between">
-        <span class="text-h6 font-weight-bold">Définir le maître</span>
-        <v-btn icon variant="text" @click="open = false" aria-label="Fermer">
+      <v-card-title
+        class="d-flex align-center"
+        style="gap: 8px; flex-wrap: nowrap"
+      >
+        <span
+          class="text-h6 font-weight-bold"
+          style="
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          "
+          >Définir le maître</span
+        >
+        <v-btn
+          icon
+          variant="text"
+          @click="open = false"
+          aria-label="Fermer"
+          style="flex-shrink: 0"
+        >
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -49,7 +67,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 const open = ref(props.modelValue);
 watch(
   () => props.modelValue,
-  (v) => (open.value = v)
+  (v) => (open.value = v),
 );
 watch(open, (v) => emit("update:modelValue", v));
 

@@ -18,10 +18,10 @@
             :rules="[r.required, r.between(0, 20)]"
           />
           <v-text-field
-            v-model="formData.dateNote"
-            label="Date"
-            type="date"
-            :rules="[r.required]"
+            v-model="displayDate"
+            label="Date (jj/mm/aaaa)"
+            placeholder="jj/mm/aaaa"
+            :rules="[r.required, r.validDate]"
           />
           <v-textarea
             v-model="formData.commentaire"
@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { api } from "@/services/api";
 
 const props = defineProps({
@@ -54,7 +54,7 @@ const emit = defineEmits(["update:modelValue", "saved"]);
 const open = ref(props.modelValue);
 watch(
   () => props.modelValue,
-  (v) => (open.value = v)
+  (v) => (open.value = v),
 );
 watch(open, (v) => emit("update:modelValue", v));
 
@@ -68,15 +68,59 @@ const formData = ref({
   commentaire: "",
 });
 
+const displayDate = computed({
+  get() {
+    if (!formData.value.dateNote) return "";
+    const [y, m, d] = formData.value.dateNote.split("-");
+    return `${d}/${m}/${y}`;
+  },
+  set(val) {
+    if (!val) {
+      formData.value.dateNote = "";
+      return;
+    }
+    const parts = val.split("/");
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      formData.value.dateNote = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+  },
+});
+
 const r = {
   required: (v) =>
     (v !== null && v !== undefined && String(v).trim().length) || "Requis",
   between: (min, max) => (v) =>
     (v >= min && v <= max) || `Entre ${min} et ${max}`,
+  validDate: (v) => {
+    if (!v) return true;
+    const regex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+    const match = v.match(regex);
+    if (!match) return "Format: jj/mm/aaaa";
+    const [, d, m, y] = match;
+    const date = new Date(y, m - 1, d);
+    if (
+      date.getDate() != d ||
+      date.getMonth() != m - 1 ||
+      date.getFullYear() != y
+    ) {
+      return "Date invalide";
+    }
+    return true;
+  },
 };
 
 function close() {
   open.value = false;
+}
+
+function resetForm() {
+  formData.value = {
+    matiere: "",
+    note: null,
+    dateNote: new Date().toISOString().slice(0, 10),
+    commentaire: "",
+  };
 }
 
 async function submit() {
@@ -101,7 +145,10 @@ async function submit() {
   try {
     await api.post(`/pupils/${props.pupilId}/grades/add`, payload);
     emit("saved");
+    resetForm();
     close();
+  } catch (error) {
+    console.error("Error adding note:", error);
   } finally {
     loading.value = false;
   }

@@ -3,27 +3,66 @@
     <div class="d-flex align-center justify-space-between">
       <div>
         <div class="text-body-2 text-medium-emphasis">Taux de présence</div>
-        <div class="text-h5 font-weight-bold mt-1">{{ value }}%</div>
+        <div class="text-h5 font-weight-bold mt-1">
+          <template v-if="loading">
+            <v-progress-circular indeterminate size="24" width="2" />
+          </template>
+          <template v-else-if="error">
+            <span class="text-error">Erreur</span>
+          </template>
+          <template v-else-if="value !== null && value !== undefined">
+            {{ value }}%
+          </template>
+          <template v-else>
+            <span class="text-medium-emphasis">N/C</span>
+          </template>
+        </div>
       </div>
 
-      <v-avatar color="primary" variant="tonal" size="40">
-        <v-icon>mdi-trending-up</v-icon>
-      </v-avatar>
+      <v-tooltip :text="error || 'Actualiser'" location="top">
+        <template #activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            icon
+            size="small"
+            variant="text"
+            :loading="loading"
+            @click="$emit('refresh')"
+            aria-label="Actualiser le taux de présence"
+          >
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+        </template>
+      </v-tooltip>
     </div>
 
     <div class="text-caption text-medium-emphasis mt-2">
       {{ subtitle }}
     </div>
 
-    <v-progress-linear class="mt-3" :model-value="value" height="8" rounded />
+    <v-progress-linear
+      class="mt-3"
+      :model-value="value || 0"
+      height="8"
+      rounded
+      :color="error ? 'error' : 'primary'"
+    />
+
+    <div v-if="error" class="text-caption text-error mt-2">
+      {{ error }}
+    </div>
   </v-card>
 </template>
 
 <script setup>
 defineProps({
-  value: { type: Number, default: 0 },
+  value: { type: Number, default: null },
   subtitle: { type: String, default: "Cette semaine" },
+  loading: { type: Boolean, default: false },
+  error: { type: String, default: "" },
 });
+
+defineEmits(["refresh"]);
 </script>
 
 <style scoped>

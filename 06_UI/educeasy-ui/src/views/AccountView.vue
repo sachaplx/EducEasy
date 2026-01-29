@@ -46,7 +46,7 @@
 
                 <v-btn
                   type="submit"
-                  color="primary"
+                  class="button"
                   :loading="loadingEmail || emailDialogLoading"
                   :disabled="loadingEmail || emailDialogLoading"
                   height="40"
@@ -112,7 +112,7 @@
                       Annuler
                     </v-btn>
                     <v-btn
-                      color="primary"
+                      class="button"
                       @click="confirmEmailChange"
                       :loading="emailDialogLoading"
                     >
@@ -169,7 +169,7 @@
 
               <v-btn
                 type="submit"
-                color="primary"
+                class="button"
                 :loading="loadingPassword"
                 :disabled="loadingPassword"
                 height="40"
@@ -292,7 +292,7 @@ async function confirmEmailChange() {
 
     const res = await profileStore.updateEmail(
       email.value,
-      emailPassword.value
+      emailPassword.value,
     );
     emailMessage.value = res?.message || "Adresse e-mail mise à jour.";
     emailError.value = false;
@@ -331,7 +331,7 @@ async function submitPassword() {
 
     const res = await profileStore.changePassword(
       currentPassword.value,
-      newPassword.value
+      newPassword.value,
     );
     passwordMessage.value = res?.message || "Mot de passe mis à jour.";
 
@@ -352,3 +352,10 @@ async function submitPassword() {
   }
 }
 </script>
+
+<style scoped>
+.button {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+  color: white !important;
+}
+</style>
