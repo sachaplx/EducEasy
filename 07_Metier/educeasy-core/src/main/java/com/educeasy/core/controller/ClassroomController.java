@@ -75,6 +75,32 @@ public class ClassroomController {
 		}
 	}
 
+	@GetMapping("/mine")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<List<ClassroomInfo>> myClassrooms(Authentication auth) {
+		if (auth == null || auth.isAuthenticated()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+
+		String username = ((UserDetails) auth.getPrincipal()).getUsername();
+
+		boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+		boolean isPrincipal = auth.getAuthorities().stream().anyMatch(a -> "ROLE_PRINCIPAL".equals(a.getAuthority()));
+		boolean isTeacher = auth.getAuthorities().stream().anyMatch(a -> "ROLE_TEACHER".equals(a.getAuthority()));
+
+		if (isAdmin) {
+			return ResponseEntity.ok(classroomService.getClassroomsForAdmin());
+		}
+		if (isPrincipal) {
+			return ResponseEntity.ok(classroomService.getClassroomsForPrincipal(username));
+		}
+		if (isTeacher) {
+			return ResponseEntity.ok(classroomService.getClassroomsForTeacher(username));
+		}
+
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+	}
+
 	@PostMapping("/{id}/pupils")
 	@PreAuthorize("hasAnyRole('PRINCIPAL','ADMIN')")
 	public ResponseEntity<PupilInfo> addPupil(@PathVariable

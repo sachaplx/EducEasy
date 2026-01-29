@@ -167,6 +167,29 @@ public class ClassroomService {
 		return toDTO(c);
 	}
 
+	@Transactional
+	public List<ClassroomInfo> getClassroomsForTeacher(String email) {
+		return classroomRepository.findByMaitreUserEmailIgnoreCase(email).stream().map(this::toDTO).toList();
+	}
+
+	@Transactional
+	public List<ClassroomInfo> getClassroomsForPrincipal(String email) {
+		User me = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur introuvable."));
+
+		if (me.getRole() != Role.PRINCIPAL && me.getRole() != Role.ADMIN) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès interdit.");
+		}
+
+		School school = schoolRepository.findByPrincipalUserId(me.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "École introuvable pour ce principal"));
+
+		return getClassroomsforSchool(school.getId());
+	}
+
+	@Transactional
+	public List<ClassroomInfo> getClassroomsForAdmin() {
+		return classroomRepository.findAll().stream().map(this::toDTO).toList();
+	}
+
 	public ClassroomService(ClassroomRepository classroom, InscriptionRepository inscription, UserRepository user, SchoolRepository school, ProfessorRepository professor, PupilService pupil, MaitreInvitationService maitre) {
 		this.classroomRepository = classroom;
 		this.inscriptionRepository = inscription;
