@@ -77,7 +77,7 @@ public class ClassroomController {
 
 	@GetMapping("/mine")
 	public ResponseEntity<List<ClassroomInfo>> myClassrooms(Authentication auth) {
-		if (auth == null || auth.isAuthenticated()) {
+		if (auth == null || !auth.isAuthenticated()) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
 
