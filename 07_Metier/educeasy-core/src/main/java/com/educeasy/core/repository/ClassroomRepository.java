@@ -15,7 +15,7 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
 
 	List<Classroom> findBySchoolIdIn(List<Long> schoolIds);
 
-	List<Classroom> findByMaitreUserEmailIgnoreCase(String email);
+	List<Classroom> findByMaitreUserUsernameIgnoreCase(String Username);
 
 	@Query("select c from Classroom c left join fetch c.maitre m left join fetch c.school s where c.id = :id")
 	Optional<Classroom> findByIdWithTeacherAndSchool(@Param("id")

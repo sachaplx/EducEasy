@@ -168,13 +168,13 @@ public class ClassroomService {
 	}
 
 	@Transactional
-	public List<ClassroomInfo> getClassroomsForTeacher(String email) {
-		return classroomRepository.findByMaitreUserEmailIgnoreCase(email).stream().map(this::toDTO).toList();
+	public List<ClassroomInfo> getClassroomsForTeacher(String username) {
+		return classroomRepository.findByMaitreUserUsernameIgnoreCase(username).stream().map(this::toDTO).toList();
 	}
 
 	@Transactional
-	public List<ClassroomInfo> getClassroomsForPrincipal(String email) {
-		User me = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur introuvable."));
+	public List<ClassroomInfo> getClassroomsForPrincipal(String username) {
+		User me = userRepository.findByUsernameIgnoreCase(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur introuvable."));
 
 		if (me.getRole() != Role.PRINCIPAL && me.getRole() != Role.ADMIN) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès interdit.");
