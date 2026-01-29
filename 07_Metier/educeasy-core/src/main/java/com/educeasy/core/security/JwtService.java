@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.educeasy.core.dto.CustomUserDetails;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -20,10 +22,12 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
 	private final Key key;
-	
+
 	private final long expirationMinutes;
 
-	public JwtService(@Value("${app.security.jwt-secret}") String secret, @Value("${app.security.jwt-expiration-minutes}") long expirationMinutes) {
+	public JwtService(@Value("${app.security.jwt-secret}")
+	String secret, @Value("${app.security.jwt-expiration-minutes}")
+	long expirationMinutes) {
 		byte[] bytes;
 		try {
 			bytes = Decoders.BASE64.decode(secret);
@@ -44,8 +48,10 @@ public class JwtService {
 	}
 
 	public boolean isTokenValid(String token, UserDetails user) {
-		final String username = extractUsername(token);
-		return username.equals(user.getUsername()) && !isExpired(token);
+		final String subject = extractUsername(token);
+		boolean matches = subject != null && (user.getUsername().equalsIgnoreCase(subject) || (user instanceof CustomUserDetails cud && cud.getEmail().equalsIgnoreCase(subject)));
+
+		return matches && !isExpired(token);
 	}
 
 	public String extractUsername(String token) {
