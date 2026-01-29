@@ -61,7 +61,7 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
 	LocalDate from, @Param("to")
 	LocalDate to);
 
-	@Query("select count(distinct i.pupil.id) from Inscription i join i.classroom c join c.teacher t join t.user tu where tu.id = :teacherUserId and i.dateEntree <= :to and (i.dateSortie is null or i.dateSortie > :from)")
+	@Query("select count(distinct i.pupil.id) from Inscription i join i.classroom c join c.maitre t join t.user tu where tu.id = :teacherUserId and i.dateEntree <= :to and (i.dateSortie is null or i.dateSortie > :from)")
 	long countActivePupilsForTeacherInPeriod(@Param("teacherUserId")
 	Long teacherUserId, @Param("from")
 	LocalDate from, @Param("to")
