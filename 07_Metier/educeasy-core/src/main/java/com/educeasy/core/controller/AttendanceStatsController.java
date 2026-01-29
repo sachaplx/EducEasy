@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.educeasy.core.dto.CustomUserDetails;
 import com.educeasy.core.dto.PresenceRateResponse;
+import com.educeasy.core.entity.UserRole;
 import com.educeasy.core.service.AttendanceStatsService;
 
 @RestController
@@ -26,7 +27,14 @@ public class AttendanceStatsController {
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 	LocalDate to) {
 		CustomUserDetails me = (CustomUserDetails) auth.getPrincipal();
-		return statsService.getNetworkPresenceRate(me.getId(), from, to);
+		UserRole role = me.getUser().getRole();
+		
+		if (role == UserRole.TEACHER) {
+			return statsService.getTeacherPresenceRate(me.getId(), from, to);
+		} else {
+			// PRINCIPAL ou autre rôle administratif
+			return statsService.getNetworkPresenceRate(me.getId(), from, to);
+		}
 	}
 
 	public AttendanceStatsController(AttendanceStatsService statsService) {

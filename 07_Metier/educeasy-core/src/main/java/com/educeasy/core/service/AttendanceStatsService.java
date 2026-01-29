@@ -44,6 +44,32 @@ public class AttendanceStatsService {
 		return new PresenceRateResponse(start, end, schoolDays, pupilCount, absentSlots, totalSlots, presentSlots, rate);
 	}
 
+	public PresenceRateResponse getTeacherPresenceRate(Long teacherUserId, LocalDate from, LocalDate to) {
+
+		LocalDate today = LocalDate.now(ZONE);
+		LocalDate start = (from != null) ? from : today.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+		LocalDate end = (to != null) ? to : today.with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+		if (end.isBefore(start))
+			throw new IllegalArgumentException("to must be >= from");
+
+		int schoolDays = countWeekdays(start, end);
+
+		long pupilCount = inscriptionRepository.countActivePupilsForTeacherInPeriod(teacherUserId, start, end);
+		long absentSlots = absenceRepository.countAbsentSlotsForTeacher(teacherUserId, start, end);
+
+		long totalSlots = pupilCount * (long) schoolDays * 2L;
+
+		if (totalSlots == 0) {
+			return new PresenceRateResponse(start, end, schoolDays, pupilCount, absentSlots, 0, 0, null);
+		}
+
+		long presentSlots = Math.max(0, totalSlots - absentSlots);
+		double rate = Math.round((presentSlots * 10000.0) / totalSlots) / 100.0;
+
+		return new PresenceRateResponse(start, end, schoolDays, pupilCount, absentSlots, totalSlots, presentSlots, rate);
+	}
+
 	private static int countWeekdays(LocalDate start, LocalDate end) {
 		int days = 0;
 		for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {

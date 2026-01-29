@@ -24,4 +24,10 @@ public interface AbsenceRepository extends JpaRepository<Absence, Long> {
 	Long principalUserId, @Param("from")
 	LocalDate from, @Param("to")
 	LocalDate to);
+
+	@Query("select count(a) from Absence a where a.date between :from and :to and exists (select 1 from Inscription i join i.classroom c join c.teacher t join t.user tu where i.pupil.id = a.pupil.id and tu.id = :teacherUserId and i.dateEntree <= a.date and (i.dateSortie is null or i.dateSortie > a.date))")
+	long countAbsentSlotsForTeacher(@Param("teacherUserId")
+	Long teacherUserId, @Param("from")
+	LocalDate from, @Param("to")
+	LocalDate to);
 }
